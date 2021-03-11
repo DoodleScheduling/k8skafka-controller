@@ -7,7 +7,7 @@ Installs the [k8skafka-controller](https://github.com/DoodleScheduling/k8skafka-
 To install the chart with the release name `k8skafka-controller`:
 
 ```console
-helm upgrade --install k8skafka-controller k8skafka-controller/k8skafka-controller
+helm upgrade --install k8skafka-controller chart/k8skafka-controller
 ```
 
 This command deploys the k8skafka-controller with the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
