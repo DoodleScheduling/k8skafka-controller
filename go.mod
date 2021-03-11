@@ -12,6 +12,7 @@ require (
 	github.com/segmentio/kafka-go v0.4.10
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
+	github.com/stretchr/testify v1.6.1
 	golang.org/x/mod v0.4.0 // indirect
 	golang.org/x/tools v0.0.0-20210104081019-d8d6ddbec6ee // indirect
 	k8s.io/api v0.20.2

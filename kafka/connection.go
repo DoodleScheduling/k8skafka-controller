@@ -94,6 +94,7 @@ func (c *Connection) CreatePartitions(ctx context.Context, topic Topic, numberOf
 	for p = 0; p < numberOfPartitions; p++ {
 		var brokerIDs []int32
 		brokerIDs, brokers = c.assignBrokersToPartition(topic, brokers)
+		// TODO check how partition leader is assigned. Is it the first broker ID in slice? Not having a balanced leader assignment leads to leader skewed scenario
 		topicPartitionAssignments = append(topicPartitionAssignments, k.TopicPartitionAssignment{BrokerIDs: brokerIDs})
 	}
 
@@ -148,20 +149,6 @@ func (c *Connection) GetTopic(name string) (*Topic, error) {
 		} else {
 			brokers[int64(p.Leader.ID)] = brokers[int64(p.Leader.ID)] + 1
 		}
-		for _, r := range p.Replicas {
-			if _, ok := brokers[int64(r.ID)]; !ok {
-				brokers[int64(r.ID)] = 0
-			} else {
-				brokers[int64(r.ID)] = brokers[int64(r.ID)] + 1
-			}
-		}
-		for _, r := range p.Isr {
-			if _, ok := brokers[int64(r.ID)]; !ok {
-				brokers[int64(r.ID)] = 0
-			} else {
-				brokers[int64(r.ID)] = brokers[int64(r.ID)] + 1
-			}
-		}
 		numberOfReplicas = int64(len(p.Replicas))
 	}
 
@@ -185,14 +172,14 @@ func (c *Connection) assignBrokersToPartition(topic Topic, brokers map[int64]int
 		var selectedBroker int64 = 0
 		var min int64 = math.MaxInt64
 		for b, v := range brokers {
-			if v < min {
-				alreadySelected := false
-				for _, bid := range brokerIDs {
-					if int64(bid) == selectedBroker {
-						alreadySelected = true
-					}
+			alreadySelected := false
+			for _, bid := range brokerIDs {
+				if int64(bid) == b {
+					alreadySelected = true
 				}
-				if !alreadySelected {
+			}
+			if !alreadySelected {
+				if v < min {
 					min = v
 					selectedBroker = b
 				}

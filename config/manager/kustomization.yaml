@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: nexus.doodle.com:5000/devops/k8skafka-controller
-  newTag: "0.16"
+  newTag: "0.21"

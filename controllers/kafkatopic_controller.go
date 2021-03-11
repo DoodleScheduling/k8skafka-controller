@@ -94,29 +94,38 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 	}
 	if existingTopic == nil {
 		if err := kc.CreateTopic(kt); err != nil {
-			msg := fmt.Sprintf("Topic failed to create/update: %s", err.Error())
+			msg := fmt.Sprintf("Failed to create topic: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
 			return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, nil
 		}
-	} else {
-		if existingTopic.Partitions != kt.Partitions {
-			if existingTopic.Partitions > kt.Partitions {
-				msg := fmt.Sprintf("Cannot remove partitions, this is not allowed. "+
-					"Requested number of partitions: %d, current partitions: %d, topic: %s, address: %s", kt.Partitions, existingTopic.Partitions, kt.Name, topic.GetAddress())
-				r.Recorder.Event(&topic, "Normal", "info", msg)
-				return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToRemoveReason, msg), ctrl.Result{}, nil
-			}
 
-			kt.Brokers = existingTopic.Brokers
-			if err := kc.CreatePartitions(ctx, kt, (kt.Partitions - existingTopic.Partitions)); err != nil {
-				msg := fmt.Sprintf("Partitions failed to create/update: %s", err.Error())
-				r.Recorder.Event(&topic, "Normal", "info", msg)
-				return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, nil
-			}
-		}
+		msg := "Topic successfully created."
+		r.Recorder.Event(&topic, "Normal", "info", msg)
+		return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}, nil
 	}
 
-	msg := "Topic/partitions successfully created/updated"
+	if existingTopic.ReplicationFactor != kt.ReplicationFactor {
+		msg := fmt.Sprintf("Cannot change replication factor, this is currently not supported. "+
+			"Requested replication factor: %d, current replication factor: %d, topic: %s, address: %s", kt.ReplicationFactor, existingTopic.ReplicationFactor, kt.Name, topic.GetAddress())
+		r.Recorder.Event(&topic, "Normal", "info", msg)
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.ReplicationFactorFailedToChangeReason, msg), ctrl.Result{}, nil
+	}
+	if existingTopic.Partitions != kt.Partitions {
+		if existingTopic.Partitions > kt.Partitions {
+			msg := fmt.Sprintf("Cannot remove partitions, this is not allowed. "+
+				"Requested number of partitions: %d, current partitions: %d, topic: %s, address: %s", kt.Partitions, existingTopic.Partitions, kt.Name, topic.GetAddress())
+			r.Recorder.Event(&topic, "Normal", "info", msg)
+			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToRemoveReason, msg), ctrl.Result{}, nil
+		}
+
+		kt.Brokers = existingTopic.Brokers
+		if err := kc.CreatePartitions(ctx, kt, kt.Partitions-existingTopic.Partitions); err != nil {
+			msg := fmt.Sprintf("Failed to create partitions: %s", err.Error())
+			r.Recorder.Event(&topic, "Normal", "info", msg)
+			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToCreateReason, msg), ctrl.Result{}, nil
+		}
+	}
+	msg := "Topic successfully updated."
 	r.Recorder.Event(&topic, "Normal", "info", msg)
 	return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}, nil
 }
