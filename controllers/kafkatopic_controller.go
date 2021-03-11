@@ -45,8 +45,8 @@ type KafkaTopicReconcilerOptions struct {
 	MaxConcurrentReconciles int
 }
 
-// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=kafkatopics,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=kafkatopics/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=KafkaTopics,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=KafkaTopics/status,verbs=get;update;patch
 
 func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues("Namespace", req.Namespace, "Name", req.NamespacedName)
