@@ -58,8 +58,10 @@ const (
 )
 
 const (
-	TopicFailedToCreateReason = "TopicFailedToCreate"
-	TopicReadyReason          = "TopicReadyReason"
+	PartitionsFailedToRemoveReason = "PartitionsFailedToRemove"
+	TopicFailedToGetReason         = "TopicFailedToGet"
+	TopicFailedToCreateReason      = "TopicFailedToCreate"
+	TopicReadyReason               = "TopicReadyReason"
 )
 
 // ConditionalResource is a resource with conditions

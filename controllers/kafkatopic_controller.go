@@ -45,8 +45,8 @@ type KafkaTopicReconcilerOptions struct {
 	MaxConcurrentReconciles int
 }
 
-// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=KafkaTopics,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=KafkaTopics/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=kafkatopics,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=kafkatopics/status,verbs=get;update;patch
 
 func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues("Namespace", req.Namespace, "Name", req.NamespacedName)
@@ -80,19 +80,45 @@ func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.KafkaTopic) (v1beta1.KafkaTopic, ctrl.Result, error) {
 	kc := kafka.NewTCPConnection(topic.GetAddress())
-	if err := kc.CreatePartitions(ctx, kafka.Topic{
+	kt := kafka.Topic{
 		Name:              topic.GetTopicName(),
 		Partitions:        topic.GetPartitions(),
 		ReplicationFactor: topic.GetReplicationFactor(),
-	}); err != nil {
-		msg := fmt.Sprintf("Topic/partitions failed to create: %s", err.Error())
-		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, err
-	} else {
-		msg := "Topic/partitions successfully created"
-		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}, err
 	}
+
+	existingTopic, err := kc.GetTopic(kt.Name)
+	if err != nil {
+		msg := fmt.Sprintf("Cannot get topic: %s in %s :: %s", kt.Name, topic.GetAddress(), err.Error())
+		r.Recorder.Event(&topic, "Normal", "info", msg)
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{}, nil
+	}
+	if existingTopic == nil {
+		if err := kc.CreateTopic(kt); err != nil {
+			msg := fmt.Sprintf("Topic failed to create/update: %s", err.Error())
+			r.Recorder.Event(&topic, "Normal", "info", msg)
+			return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, nil
+		}
+	} else {
+		if existingTopic.Partitions != kt.Partitions {
+			if existingTopic.Partitions > kt.Partitions {
+				msg := fmt.Sprintf("Cannot remove partitions, this is not allowed. "+
+					"Requested number of partitions: %d, current partitions: %d, topic: %s, address: %s", kt.Partitions, existingTopic.Partitions, kt.Name, topic.GetAddress())
+				r.Recorder.Event(&topic, "Normal", "info", msg)
+				return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToRemoveReason, msg), ctrl.Result{}, nil
+			}
+
+			kt.Brokers = existingTopic.Brokers
+			if err := kc.CreatePartitions(ctx, kt, (kt.Partitions - existingTopic.Partitions)); err != nil {
+				msg := fmt.Sprintf("Partitions failed to create/update: %s", err.Error())
+				r.Recorder.Event(&topic, "Normal", "info", msg)
+				return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, nil
+			}
+		}
+	}
+
+	msg := "Topic/partitions successfully created/updated"
+	r.Recorder.Event(&topic, "Normal", "info", msg)
+	return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}, nil
 }
 
 func (r *KafkaTopicReconciler) SetupWithManager(mgr ctrl.Manager, opts KafkaTopicReconcilerOptions) error {
