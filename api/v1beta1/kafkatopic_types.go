@@ -33,7 +33,7 @@ type KafkaTopicSpec struct {
 	// +required
 	Address string `json:"address"`
 
-	// DatabaseName is by default the same as metata.name
+	// Name is by default the same as metata.name
 	// +optional
 	Name string `json:"name"`
 

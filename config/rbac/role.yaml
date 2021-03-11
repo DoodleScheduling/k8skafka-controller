@@ -9,7 +9,7 @@ rules:
 - apiGroups:
   - kafka.infra.doodle.com
   resources:
-  - kafkatopics
+  - KafkaTopics
   verbs:
   - create
   - delete
@@ -21,7 +21,7 @@ rules:
 - apiGroups:
   - kafka.infra.doodle.com
   resources:
-  - kafkatopics/status
+  - KafkaTopics/status
   verbs:
   - get
   - patch

@@ -52,7 +52,7 @@ spec:
               description: The connect URI
               type: string
             name:
-              description: DatabaseName is by default the same as metata.name
+              description: Name is by default the same as metata.name
               type: string
             partitions:
               description: Number of partitions

@@ -1,0 +1,12 @@
+apiVersion: v2
+appVersion: 0.0.0
+description: Manage Kafka Topics and related settings
+home: https://github.com/DoodleScheduling/k8skafka-controller
+keywords:
+- kubernetes-controller
+- kafka
+- kafka-topic
+name: k8skafka-controller
+sources:
+- https://github.com/DoodleScheduling/k8skafka-controller
+version: 0.0.0
