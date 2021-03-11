@@ -1,0 +1,28 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - kafka.infra.doodle.com
+  resources:
+  - KafkaTopics
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - kafka.infra.doodle.com
+  resources:
+  - KafkaTopics/status
+  verbs:
+  - get
+  - patch
+  - update

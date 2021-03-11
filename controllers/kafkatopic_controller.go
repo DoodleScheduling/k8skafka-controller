@@ -18,8 +18,9 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"github.com/DoodleScheduling/k8skafka-controller/kafka"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -44,8 +45,8 @@ type KafkaTopicReconcilerOptions struct {
 	MaxConcurrentReconciles int
 }
 
-// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=kafkatopics,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=kafkatopics/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=KafkaTopics,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=kafka.infra.doodle.com,resources=KafkaTopics/status,verbs=get;update;patch
 
 func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues("Namespace", req.Namespace, "Name", req.NamespacedName)
@@ -78,7 +79,20 @@ func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 }
 
 func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.KafkaTopic) (v1beta1.KafkaTopic, ctrl.Result, error) {
-	return topic, ctrl.Result{}, nil
+	kc := kafka.NewTCPConnection(topic.GetAddress())
+	if err := kc.CreatePartitions(ctx, kafka.Topic{
+		Name:              topic.GetTopicName(),
+		Partitions:        topic.GetPartitions(),
+		ReplicationFactor: topic.GetReplicationFactor(),
+	}); err != nil {
+		msg := fmt.Sprintf("Topic/partitions failed to create: %s", err.Error())
+		r.Recorder.Event(&topic, "Normal", "info", msg)
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, err
+	} else {
+		msg := "Topic/partitions successfully created"
+		r.Recorder.Event(&topic, "Normal", "info", msg)
+		return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}, err
+	}
 }
 
 func (r *KafkaTopicReconciler) SetupWithManager(mgr ctrl.Manager, opts KafkaTopicReconcilerOptions) error {
@@ -88,20 +102,12 @@ func (r *KafkaTopicReconciler) SetupWithManager(mgr ctrl.Manager, opts KafkaTopi
 		Complete(r)
 }
 
-func (r *KafkaTopicReconciler) patchStatus(ctx context.Context, clone *v1beta1.KafkaTopic) error {
-	key := client.ObjectKeyFromObject(clone)
+func (r *KafkaTopicReconciler) patchStatus(ctx context.Context, topic *v1beta1.KafkaTopic) error {
+	key := client.ObjectKeyFromObject(topic)
 	latest := &v1beta1.KafkaTopic{}
 	if err := r.Client.Get(ctx, key, latest); err != nil {
 		return err
 	}
 
-	return r.Client.Status().Patch(ctx, clone, client.MergeFrom(latest))
-}
-
-// objectKey returns client.ObjectKey for the object.
-func objectKey(object metav1.Object) client.ObjectKey {
-	return client.ObjectKey{
-		Namespace: object.GetNamespace(),
-		Name:      object.GetName(),
-	}
+	return r.Client.Status().Patch(ctx, topic, client.MergeFrom(latest))
 }

@@ -28,17 +28,22 @@ const (
 
 // KafkaTopicSpec defines the desired state of KafkaTopic
 type KafkaTopicSpec struct {
+
+	// The connect URI
+	// +required
+	Address string `json:"address"`
+
 	// DatabaseName is by default the same as metata.name
 	// +optional
 	Name string `json:"name"`
 
 	// Number of partitions
 	// +optional
-	Partitions *int64 `json:"partitions"`
+	Partitions *int64 `json:"partitions,omitempty"`
 
 	// Replication factor
 	// +optional
-	ReplicationFactor *int64 `json:"replicationFactor"`
+	ReplicationFactor *int64 `json:"replicationFactor,omitempty"`
 }
 
 // KafkaTopicStatus defines the observed state of KafkaTopic
@@ -50,6 +55,11 @@ type KafkaTopicStatus struct {
 
 const (
 	ReadyCondition = "Ready"
+)
+
+const (
+	TopicFailedToCreateReason = "TopicFailedToCreate"
+	TopicReadyReason          = "TopicReadyReason"
 )
 
 // ConditionalResource is a resource with conditions
@@ -105,7 +115,11 @@ type KafkaTopic struct {
 	Status KafkaTopicStatus `json:"status,omitempty"`
 }
 
-func (in *KafkaTopic) GetName() string {
+func (in *KafkaTopic) GetAddress() string {
+	return in.Spec.Address
+}
+
+func (in *KafkaTopic) GetTopicName() string {
 	if in.Spec.Name != "" {
 		return in.Spec.Name
 	}

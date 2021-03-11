@@ -1,13 +1,19 @@
 package kafka
 
 import (
+	"context"
 	k "github.com/segmentio/kafka-go"
 	"net"
 	"strconv"
+	"time"
 )
 
 const (
 	TCP = "tcp"
+)
+
+const (
+	DefaultKafkaClientTimeout = 4 * time.Minute
 )
 
 type Connection struct {
@@ -32,14 +38,14 @@ func NewConnection(protocol string, uri string) *Connection {
 	}
 }
 
-func (r *Connection) CreateTopic(topic Topic) error {
+func (c *Connection) CreateTopic(topic Topic) error {
 	topicConfig := k.TopicConfig{
 		Topic:             topic.Name,
 		NumPartitions:     int(topic.Partitions),
 		ReplicationFactor: int(topic.ReplicationFactor),
 	}
 
-	conn, err := k.Dial(r.protocol, r.uri)
+	conn, err := k.Dial(c.protocol, c.uri)
 	if err != nil {
 		return err
 	}
@@ -50,7 +56,7 @@ func (r *Connection) CreateTopic(topic Topic) error {
 		return err
 	}
 	var controllerConn *k.Conn
-	controllerConn, err = k.Dial(r.protocol, net.JoinHostPort(controller.Host, strconv.Itoa(controller.Port)))
+	controllerConn, err = k.Dial(c.protocol, net.JoinHostPort(controller.Host, strconv.Itoa(controller.Port)))
 	if err != nil {
 		return err
 	}
@@ -59,6 +65,38 @@ func (r *Connection) CreateTopic(topic Topic) error {
 	err = controllerConn.CreateTopics(topicConfig)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func (c *Connection) CreatePartitions(ctx context.Context, topic Topic) error {
+	addr, err := net.ResolveTCPAddr(c.protocol, c.uri)
+	if err != nil {
+		return err
+	}
+	client := k.Client{
+		Addr:    addr,
+		Timeout: DefaultKafkaClientTimeout,
+	}
+	topicPartitionsConfig := []k.TopicPartitionsConfig{
+		{
+			Name:  topic.Name,
+			Count: int32(topic.Partitions),
+		},
+	}
+	req := k.CreatePartitionsRequest{
+		Topics:       topicPartitionsConfig,
+		ValidateOnly: false,
+	}
+	res, err := client.CreatePartitions(ctx, &req)
+	if err != nil {
+		return err
+	}
+	if res.Errors == nil {
+		return nil
+	}
+	if e, found := res.Errors[topic.Name]; found {
+		return e
 	}
 	return nil
 }
