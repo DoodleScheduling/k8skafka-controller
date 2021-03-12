@@ -30,5 +30,5 @@ podAnnotations:
 See Customizing the Chart Before Installing. To see all configurable options with detailed comments, visit the chart's values.yaml, or run the configuration command:
 
 ```sh
-$ helm show values k8skafka-controller/k8skafka-controller
+$ helm show values chart/k8skafka-controller
 ```

@@ -15,9 +15,6 @@ Kubernetes controller that can manage Kafka Topics.
 ### Known issues
 - partition assigning can in some cases lead to leader being skewed
 
-
-![graph](https://github.com/DoodleScheduling/k8skafka-controller/blob/master/docs/graph.jpg?raw=true)
-
 ## Example KafkaTopic
 
 A `KafkaTopic` represents one Kafka Topic.
@@ -36,7 +33,7 @@ spec:
 
 ## Helm chart
 
-Please see [chart/k8skafka-controller](https://github.com/DoodleScheduling/k8skafka-controller) for the helm chart docs.
+Please see [chart/k8skafka-controller](https://github.com/DoodleScheduling/k8skafka-controller/tree/master/chart/k8skafka-controller) for the helm chart docs.
 
 ## Configure the controller
 
