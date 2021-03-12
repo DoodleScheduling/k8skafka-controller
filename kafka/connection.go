@@ -32,7 +32,10 @@ type Topic struct {
 	Config            Config
 }
 
+// Holds BrokerIds as keys, and number of assignments for this Broker (currently the partitions that the Broker is a leader for)
 type Brokers map[int64]int64
+
+// Holds name-value configuration options, passed to underlying kafka lib as-is
 type Config map[string]string
 
 func NewTCPConnection(uri string) *Connection {
