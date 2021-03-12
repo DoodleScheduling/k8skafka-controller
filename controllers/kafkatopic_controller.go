@@ -80,11 +80,7 @@ func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.KafkaTopic) (v1beta1.KafkaTopic, ctrl.Result, error) {
 	kc := kafka.NewTCPConnection(topic.GetAddress())
-	kt := kafka.Topic{
-		Name:              topic.GetTopicName(),
-		Partitions:        topic.GetPartitions(),
-		ReplicationFactor: topic.GetReplicationFactor(),
-	}
+	kt := TranslateKafkaTopicV1Beta1(topic)
 
 	existingTopic, err := kc.GetTopic(kt.Name)
 	if err != nil {
@@ -93,7 +89,7 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{}, nil
 	}
 	if existingTopic == nil {
-		if err := kc.CreateTopic(kt); err != nil {
+		if err := kc.CreateTopic(*kt); err != nil {
 			msg := fmt.Sprintf("Failed to create topic: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
 			return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, nil
@@ -119,7 +115,7 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 		}
 
 		kt.Brokers = existingTopic.Brokers
-		if err := kc.CreatePartitions(ctx, kt, kt.Partitions-existingTopic.Partitions); err != nil {
+		if err := kc.CreatePartitions(ctx, *kt, kt.Partitions-existingTopic.Partitions); err != nil {
 			msg := fmt.Sprintf("Failed to create partitions: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
 			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToCreateReason, msg), ctrl.Result{}, nil

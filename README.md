@@ -29,6 +29,9 @@ spec:
   name: "test-topic"
   partitions: 16
   replicationFactor: 1
+  config:
+    cleanupPolicy: compact
+    deleteRetentionsMs: 31556952000
 ```
 
 ## Helm chart

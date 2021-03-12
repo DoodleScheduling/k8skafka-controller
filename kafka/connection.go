@@ -28,8 +28,12 @@ type Topic struct {
 	Name              string
 	Partitions        int64
 	ReplicationFactor int64
-	Brokers           map[int64]int64
+	Brokers           Brokers
+	Config            Config
 }
+
+type Brokers map[int64]int64
+type Config map[string]string
 
 func NewTCPConnection(uri string) *Connection {
 	return NewConnection(TCP, uri)
@@ -43,10 +47,18 @@ func NewConnection(protocol string, uri string) *Connection {
 }
 
 func (c *Connection) CreateTopic(topic Topic) error {
+	ce := make([]k.ConfigEntry, 0)
+	for name, value := range topic.Config {
+		ce = append(ce, k.ConfigEntry{
+			ConfigName:  name,
+			ConfigValue: value,
+		})
+	}
 	topicConfig := k.TopicConfig{
 		Topic:             topic.Name,
 		NumPartitions:     int(topic.Partitions),
 		ReplicationFactor: int(topic.ReplicationFactor),
+		ConfigEntries:     ce,
 	}
 
 	conn, err := k.Dial(c.protocol, c.uri)
