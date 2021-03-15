@@ -121,6 +121,11 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToCreateReason, msg), ctrl.Result{}, nil
 		}
 	}
+	if err := kc.UpdateTopicConfiguration(ctx, *kt); err != nil {
+		msg := fmt.Sprintf("Failed to update topic: %s %s", kt.Name, err.Error())
+		r.Recorder.Event(&topic, "Normal", "info", msg)
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToUpdateReason, msg), ctrl.Result{}, nil
+	}
 	msg := "Topic successfully updated."
 	r.Recorder.Event(&topic, "Normal", "info", msg)
 	return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}, nil

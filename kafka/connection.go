@@ -138,6 +138,51 @@ func (c *Connection) CreatePartitions(ctx context.Context, topic Topic, numberOf
 	return nil
 }
 
+func (c *Connection) UpdateTopicConfiguration(ctx context.Context, topic Topic) error {
+	addr, err := net.ResolveTCPAddr(c.protocol, c.uri)
+	if err != nil {
+		return err
+	}
+	client := k.Client{
+		Addr:    addr,
+		Timeout: DefaultKafkaClientTimeout,
+	}
+
+	alterConfigRequestConfigs := make([]k.AlterConfigRequestConfig, 0)
+	for n, v := range topic.Config {
+		alterConfigRequestConfigs = append(alterConfigRequestConfigs, k.AlterConfigRequestConfig{
+			Name:  n,
+			Value: v,
+		})
+	}
+	alterConfigRequestResources := []k.AlterConfigRequestResource{
+		{
+			ResourceType: k.ResourceTypeTopic,
+			ResourceName: topic.Name,
+			Configs:      alterConfigRequestConfigs,
+		},
+	}
+	alterConfigsRequest := k.AlterConfigsRequest{
+		Addr:         addr,
+		Resources:    alterConfigRequestResources,
+		ValidateOnly: false,
+	}
+
+	res, err := client.AlterConfigs(ctx, &alterConfigsRequest)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("cannot update topic config via client %s %s", c.uri, c.protocol))
+	}
+	if res.Errors == nil {
+		return nil
+	}
+	for t, e := range res.Errors {
+		if t.Type == int8(k.ResourceTypeTopic) && t.Name == topic.Name {
+			return errors.Wrap(e, fmt.Sprintf("found error while updating topic via client %s %s %s", c.uri, topic.Name, c.protocol))
+		}
+	}
+	return nil
+}
+
 func (c *Connection) GetTopic(name string) (*Topic, error) {
 	conn, err := k.Dial(c.protocol, c.uri)
 	if err != nil {

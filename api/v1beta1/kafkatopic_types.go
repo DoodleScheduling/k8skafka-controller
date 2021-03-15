@@ -237,6 +237,7 @@ const (
 	PartitionsFailedToCreateReason        = "PartitionsFailedToCreate"
 	TopicFailedToGetReason                = "TopicFailedToGet"
 	TopicFailedToCreateReason             = "TopicFailedToCreate"
+	TopicFailedToUpdateReason             = "TopicFailedToUpdate"
 	TopicReadyReason                      = "TopicReadyReason"
 )
 
