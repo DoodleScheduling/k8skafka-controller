@@ -45,7 +45,7 @@ var (
 	metricsAddr             = ":9556"
 	probesAddr              = ":9557"
 	enableLeaderElection    = true
-	leaderElectionNamespace string
+	leaderElectionNamespace = ""
 	namespaces              = ""
 	concurrent              = 4
 )
@@ -93,7 +93,7 @@ func main() {
 		Port:                    9443,
 		LeaderElection:          viper.GetBool("enable-leader-election"),
 		LeaderElectionNamespace: viper.GetString("leader-election-namespace"),
-		LeaderElectionID:        "1d722b55.doodle.com",
+		LeaderElectionID:        "1e457812.doodle.com",
 	}
 
 	ns := strings.Split(viper.GetString("namespaces"), ",")
@@ -102,6 +102,9 @@ func main() {
 		setupLog.Info("watching dedicated namespaces", "namespaces", ns)
 	} else {
 		setupLog.Info("watching all namespaces")
+	}
+	if leaderElectionNamespace != "" {
+		opts.LeaderElectionNamespace = leaderElectionNamespace
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), opts)
