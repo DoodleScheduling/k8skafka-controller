@@ -68,7 +68,7 @@ spec:
                       equivalent to no compression; and ''producer'' which means retain
                       the original compression codec set by the producer.'
                     type: string
-                  deleteRetentionsMs:
+                  deleteRetentionMs:
                     description: The amount of time to retain delete tombstone markers
                       for log compacted topics. Specified in milliseconds. This setting
                       also gives a bound on the time in which a consumer must complete
