@@ -70,7 +70,7 @@ type KafkaTopicConfig struct {
 	// This setting also gives a bound on the time in which a consumer must complete a read if they begin from offset 0
 	// to ensure that they get a valid snapshot of the final stage (otherwise delete tombstones may be collected before they complete their scan).
 	// +optional
-	DeleteRetentionMs *int64 `json:"deleteRetentionsMs,omitempty"`
+	DeleteRetentionMs *int64 `json:"deleteRetentionMs,omitempty"`
 
 	// The time to wait before deleting a file from the filesystems
 	// +optional
