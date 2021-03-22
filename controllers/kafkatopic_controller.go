@@ -86,13 +86,13 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 	if err != nil {
 		msg := fmt.Sprintf("Cannot get topic: %s in %s :: %s", kt.Name, topic.GetAddress(), err.Error())
 		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{}, nil
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{Requeue: true}, nil
 	}
 	if existingTopic == nil {
 		if err := kc.CreateTopic(*kt); err != nil {
 			msg := fmt.Sprintf("Failed to create topic: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
-			return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, nil
+			return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{Requeue: true}, nil
 		}
 
 		msg := "Topic successfully created."
@@ -118,13 +118,13 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 		if err := kc.CreatePartitions(ctx, *kt, kt.Partitions-existingTopic.Partitions); err != nil {
 			msg := fmt.Sprintf("Failed to create partitions: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
-			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToCreateReason, msg), ctrl.Result{}, nil
+			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToCreateReason, msg), ctrl.Result{Requeue: true}, nil
 		}
 	}
 	if err := kc.UpdateTopicConfiguration(ctx, *kt); err != nil {
 		msg := fmt.Sprintf("Failed to update topic: %s %s", kt.Name, err.Error())
 		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToUpdateReason, msg), ctrl.Result{}, nil
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToUpdateReason, msg), ctrl.Result{Requeue: true}, nil
 	}
 	msg := "Topic successfully updated."
 	r.Recorder.Event(&topic, "Normal", "info", msg)
