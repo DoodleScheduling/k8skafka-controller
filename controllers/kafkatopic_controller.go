@@ -67,7 +67,7 @@ func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return reconcile.Result{}, err
 	}
 
-	topic, result, reconcileErr := r.reconcile(ctx, topic)
+	topic, result := r.reconcile(ctx, topic)
 
 	// Update status after reconciliation.
 	if err = r.patchStatus(ctx, &topic); err != nil {
@@ -75,10 +75,10 @@ func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{Requeue: true}, err
 	}
 
-	return result, reconcileErr
+	return result, nil
 }
 
-func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.KafkaTopic) (v1beta1.KafkaTopic, ctrl.Result, error) {
+func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.KafkaTopic) (v1beta1.KafkaTopic, ctrl.Result) {
 	kc := kafka.NewTCPConnection(topic.GetAddress())
 	kt := TranslateKafkaTopicV1Beta1(topic)
 
@@ -86,49 +86,49 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 	if err != nil {
 		msg := fmt.Sprintf("Cannot get topic: %s in %s :: %s", kt.Name, topic.GetAddress(), err.Error())
 		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{}, nil
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{Requeue: true}
 	}
 	if existingTopic == nil {
 		if err := kc.CreateTopic(*kt); err != nil {
 			msg := fmt.Sprintf("Failed to create topic: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
-			return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, nil
+			return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{Requeue: true}
 		}
 
 		msg := "Topic successfully created."
 		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}, nil
+		return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}
 	}
 
 	if existingTopic.ReplicationFactor != kt.ReplicationFactor {
 		msg := fmt.Sprintf("Cannot change replication factor, this is currently not supported. "+
 			"Requested replication factor: %d, current replication factor: %d, topic: %s, address: %s", kt.ReplicationFactor, existingTopic.ReplicationFactor, kt.Name, topic.GetAddress())
 		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicNotReady(topic, v1beta1.ReplicationFactorFailedToChangeReason, msg), ctrl.Result{}, nil
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.ReplicationFactorFailedToChangeReason, msg), ctrl.Result{}
 	}
 	if existingTopic.Partitions != kt.Partitions {
 		if existingTopic.Partitions > kt.Partitions {
 			msg := fmt.Sprintf("Cannot remove partitions, this is not allowed. "+
 				"Requested number of partitions: %d, current partitions: %d, topic: %s, address: %s", kt.Partitions, existingTopic.Partitions, kt.Name, topic.GetAddress())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
-			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToRemoveReason, msg), ctrl.Result{}, nil
+			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToRemoveReason, msg), ctrl.Result{}
 		}
 
 		kt.Brokers = existingTopic.Brokers
 		if err := kc.CreatePartitions(ctx, *kt, kt.Partitions-existingTopic.Partitions); err != nil {
 			msg := fmt.Sprintf("Failed to create partitions: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
-			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToCreateReason, msg), ctrl.Result{}, nil
+			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToCreateReason, msg), ctrl.Result{Requeue: true}
 		}
 	}
 	if err := kc.UpdateTopicConfiguration(ctx, *kt); err != nil {
 		msg := fmt.Sprintf("Failed to update topic: %s %s", kt.Name, err.Error())
 		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToUpdateReason, msg), ctrl.Result{}, nil
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToUpdateReason, msg), ctrl.Result{Requeue: true}
 	}
 	msg := "Topic successfully updated."
 	r.Recorder.Event(&topic, "Normal", "info", msg)
-	return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}, nil
+	return v1beta1.KafkaTopicReady(topic, v1beta1.TopicReadyReason, msg), ctrl.Result{}
 }
 
 func (r *KafkaTopicReconciler) SetupWithManager(mgr ctrl.Manager, opts KafkaTopicReconcilerOptions) error {
