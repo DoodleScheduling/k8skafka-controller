@@ -63,6 +63,7 @@ podTemplate(label: 'k8skafka-controller',
             bumpImageVersion(env.TAG_NAME)
 
             tgz="k8skafka-controller-${version}.tgz"
+            sh "mkdir chart/k8skafka-controller/crds"
             sh "cp config/crd/bases/* chart/k8skafka-controller/crds"
             sh "helm package chart/k8skafka-controller"
           }
