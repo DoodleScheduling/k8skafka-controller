@@ -55,7 +55,7 @@ podTemplate(label: 'k8skafka-controller',
 
           container(name: 'kaniko', shell: '/busybox/sh') {
             sh "cp /root/dockerauth/.dockerconfigjson /kaniko/.docker/config.json"
-            sh "/kaniko/executor -f `pwd`/Dockerfile -c `pwd` --insecure --skip-tls-verify --cache=true --destination='nexus.doodle.com:5000/devops/k8skafka-controller:${env.TAG_NAME}'"
+            sh "/kaniko/executor -f `pwd`/Dockerfile -c `pwd` --destination='nexus.doodle.com:5000/devops/k8skafka-controller:${env.TAG_NAME}'"
           }
 
           container('helm') {
