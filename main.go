@@ -44,7 +44,7 @@ var (
 var (
 	metricsAddr             = ":9556"
 	probesAddr              = ":9557"
-	enableLeaderElection    = true
+	enableLeaderElection    = false
 	leaderElectionNamespace = ""
 	namespaces              = ""
 	concurrent              = 4
