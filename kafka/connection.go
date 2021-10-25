@@ -3,12 +3,13 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	k "github.com/segmentio/kafka-go"
 	"math"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
+	k "github.com/segmentio/kafka-go"
 )
 
 const (
@@ -192,7 +193,7 @@ func (c *Connection) GetTopic(name string) (*Topic, error) {
 
 	partitions, err := conn.ReadPartitions()
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	var numberOfPartitions int64 = 0
