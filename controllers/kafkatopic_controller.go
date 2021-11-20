@@ -36,9 +36,10 @@ import (
 // KafkaTopicReconciler reconciles a KafkaTopic object
 type KafkaTopicReconciler struct {
 	client.Client
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Log         logr.Logger
+	Scheme      *runtime.Scheme
+	Recorder    record.EventRecorder
+	KafkaClient kafka.KafkaClient
 }
 
 type KafkaTopicReconcilerOptions struct {
@@ -79,17 +80,16 @@ func (r *KafkaTopicReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 }
 
 func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.KafkaTopic) (v1beta1.KafkaTopic, ctrl.Result, error) {
-	kc := kafka.NewTCPConnection(topic.GetAddress())
 	kt := TranslateKafkaTopicV1Beta1(topic)
 
-	existingTopic, err := kc.GetTopic(kt.Name)
+	existingTopic, err := r.KafkaClient.GetTopic(topic.GetAddress(), kt.Name)
 	if err != nil {
 		msg := fmt.Sprintf("Cannot get topic: %s in %s :: %s", kt.Name, topic.GetAddress(), err.Error())
 		r.Recorder.Event(&topic, "Normal", "info", msg)
 		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{}, nil
 	}
 	if existingTopic == nil {
-		if err := kc.CreateTopic(*kt); err != nil {
+		if err := r.KafkaClient.CreateTopic(topic.GetAddress(), *kt); err != nil {
 			msg := fmt.Sprintf("Failed to create topic: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
 			return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToCreateReason, msg), ctrl.Result{}, nil
@@ -115,13 +115,13 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 		}
 
 		kt.Brokers = existingTopic.Brokers
-		if err := kc.CreatePartitions(ctx, *kt, kt.Partitions-existingTopic.Partitions); err != nil {
+		if err := r.KafkaClient.CreatePartitions(ctx, topic.GetAddress(), *kt, kt.Partitions-existingTopic.Partitions); err != nil {
 			msg := fmt.Sprintf("Failed to create partitions: %s", err.Error())
 			r.Recorder.Event(&topic, "Normal", "info", msg)
 			return v1beta1.KafkaTopicNotReady(topic, v1beta1.PartitionsFailedToCreateReason, msg), ctrl.Result{}, nil
 		}
 	}
-	if err := kc.UpdateTopicConfiguration(ctx, *kt); err != nil {
+	if err := r.KafkaClient.UpdateTopicConfiguration(ctx, topic.GetAddress(), *kt); err != nil {
 		msg := fmt.Sprintf("Failed to update topic: %s %s", kt.Name, err.Error())
 		r.Recorder.Event(&topic, "Normal", "info", msg)
 		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToUpdateReason, msg), ctrl.Result{}, nil

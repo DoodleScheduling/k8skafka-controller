@@ -6,12 +6,12 @@ import (
 )
 
 func TestAssignBrokers_brokersAreUnique(t *testing.T) {
+	kc := DefaultKafkaClient{}
 	brokers := make(map[int64]int64)
 	brokers[1] = 16
 	brokers[2] = 16
 	brokers[3] = 16
 	for i := 0; i < 1000; i++ {
-		conn := NewTCPConnection("kafka:9092")
 		topic := Topic{
 			Name:              "testTopic",
 			Partitions:        16,
@@ -19,7 +19,7 @@ func TestAssignBrokers_brokersAreUnique(t *testing.T) {
 			Brokers:           brokers,
 		}
 		var brokerIDs []int32
-		brokerIDs, brokers = conn.assignBrokersToPartition(topic, brokers)
+		brokerIDs, brokers = kc.assignBrokersToPartition(topic, brokers)
 
 		u := unique(brokerIDs)
 		assert.Equal(t, 3, len(u))

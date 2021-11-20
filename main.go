@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"github.com/DoodleScheduling/k8skafka-controller/kafka"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"os"
@@ -128,10 +129,11 @@ func main() {
 	}
 
 	if err = (&controllers.KafkaTopicReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("KafkaTopic"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("KafkaTopic"),
+		Client:      mgr.GetClient(),
+		Log:         ctrl.Log.WithName("controllers").WithName("KafkaTopic"),
+		Scheme:      mgr.GetScheme(),
+		Recorder:    mgr.GetEventRecorderFor("KafkaTopic"),
+		KafkaClient: kafka.NewDefaultKafkaClient(),
 	}).SetupWithManager(mgr, controllers.KafkaTopicReconcilerOptions{MaxConcurrentReconciles: viper.GetInt("concurrent")}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KafkaTopic")
 		os.Exit(1)
