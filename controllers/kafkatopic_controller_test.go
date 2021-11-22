@@ -356,9 +356,9 @@ var _ = Describe("KafkaTopic controller", func() {
 		})
 
 		type KafkaConfigHolder struct {
-			newValueToSet                      interface{}
-			newValueExpectedInKafkaTopicObject interface{}
-			kafkaTopicObjectConfigF            func(interface{}) *infrav1beta1.KafkaTopicConfig
+			newValueToSet                  interface{}
+			newValueExpectedInKafkaBrokers interface{}
+			kafkaTopicObjectConfigF        func(interface{}) *infrav1beta1.KafkaTopicConfig
 		}
 
 		kafkaConfigTestData := map[string][]KafkaConfigHolder{
@@ -641,7 +641,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					Eventually(func() string {
 						updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
 						return updatedTopic.Config[cn]
-					}, timeout, interval).Should(Equal(tc.newValueExpectedInKafkaTopicObject))
+					}, timeout, interval).Should(Equal(tc.newValueExpectedInKafkaBrokers))
 				})
 
 			}
