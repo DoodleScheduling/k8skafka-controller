@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"github.com/DoodleScheduling/k8skafka-controller/kafka"
 	"github.com/pkg/errors"
-	"strconv"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -127,6 +128,72 @@ var _ = Describe("KafkaTopic controller", func() {
 				}
 				return topic.ReplicationFactor == replicationFactor
 			}).Should(BeTrue())
+		})
+	})
+
+	Context("When updating replication factor for already existing topic", func() {
+		var partitions int64 = 16
+		var replicationFactor int64 = 3
+		kafkaTopicName := "test-update-replication-factor"
+		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
+
+		It("Should create new topic", func() {
+			By("By checking the topic is created")
+			ctx := context.Background()
+			kafkaTopic := &infrav1beta1.KafkaTopic{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kafka.infra.doodle.com/v1beta1",
+					Kind:       "KafkaTopic",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      kafkaTopicName,
+					Namespace: KafkaTopicNamespace,
+				},
+				Spec: infrav1beta1.KafkaTopicSpec{
+					Address:           KafkaBrokersAddress,
+					Name:              kafkaTopicName,
+					Partitions:        &partitions,
+					ReplicationFactor: &replicationFactor,
+				},
+			}
+			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
+		})
+
+		It("Should refuse to change replication factor", func() {
+			By("By updating replication factor on KafkaTopic object")
+			latest := &infrav1beta1.KafkaTopic{}
+			var newReplicationFactor int64 = 4
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				latest.Spec.ReplicationFactor = &newReplicationFactor
+				return k8sClient.Update(ctx, latest)
+			}, timeout, interval).Should(Succeed())
+
+			By("By checking that topic is not ready")
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if *latest.Spec.ReplicationFactor != newReplicationFactor {
+					return errors.New("replication factor is not changed")
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				if latest.Status.Conditions[0].Status != metav1.ConditionFalse {
+					return errors.New("Condition is true")
+				}
+				return nil
+			}, timeout, interval).Should(Succeed())
+			By("By checking that reason is that replication factor cannot be modified")
+			Expect(latest.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.ReplicationFactorFailedToChangeReason))
 		})
 	})
 
@@ -265,121 +332,108 @@ var _ = Describe("KafkaTopic controller", func() {
 		var partitions int64 = 16
 		var replicationFactor int64 = 3
 		kafkaTopicName := "test-update-configuration"
-		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
 
-		It("Should create new topic", func() {
-			By("By checking the topic is created")
-			ctx := context.Background()
-			kafkaTopic := &infrav1beta1.KafkaTopic{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "kafka.infra.doodle.com/v1beta1",
-					Kind:       "KafkaTopic",
+		type KafkaConfigHolder struct {
+			newValueToSet                      interface{}
+			newValueExpectedInKafkaTopicObject interface{}
+			kafkaTopicObjectConfigF            func(interface{}) *infrav1beta1.KafkaTopicConfig
+		}
+
+		kafkaConfigTestData := map[string][]KafkaConfigHolder{
+			CleanupPolicy: {
+				{
+					newValueToSet:                      infrav1beta1.CleanupPolicyCompact,
+					newValueExpectedInKafkaTopicObject: infrav1beta1.CleanupPolicyCompact,
+					kafkaTopicObjectConfigF: func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(string)
+						return &infrav1beta1.KafkaTopicConfig{
+							CleanupPolicy: &vv,
+						}
+					},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      kafkaTopicName,
-					Namespace: KafkaTopicNamespace,
+			},
+
+			IndexIntervalBytes: {
+				{
+					newValueToSet:                      int64(2048),
+					newValueExpectedInKafkaTopicObject: "2048",
+					kafkaTopicObjectConfigF: func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							IndexIntervalBytes: &vv,
+						}
+					},
 				},
-				Spec: infrav1beta1.KafkaTopicSpec{
-					Address:           KafkaBrokersAddress,
-					Name:              kafkaTopicName,
-					Partitions:        &partitions,
-					ReplicationFactor: &replicationFactor,
+			},
+			FlushMs: {
+				{
+					newValueToSet:                      int64(666),
+					newValueExpectedInKafkaTopicObject: "666",
+					kafkaTopicObjectConfigF: func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							FlushMs: &vv,
+						}
+					},
 				},
+			},
+		}
+
+		for configName, testConfigs := range kafkaConfigTestData {
+			for i, testConfig := range testConfigs {
+				// store into variable in this closure, otherwise next loop iteration will override configName variable
+				cn := configName
+
+				kafkaTopicNameForOneTest := kafkaTopicName + "-" + strings.ToLower(configName) + "-" + fmt.Sprint(i)
+				kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicNameForOneTest, Namespace: KafkaTopicNamespace}
+				It("Should create new topic", func() {
+					By("By checking the topic is created")
+					ctx := context.Background()
+					kafkaTopic := &infrav1beta1.KafkaTopic{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "kafka.infra.doodle.com/v1beta1",
+							Kind:       "KafkaTopic",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      kafkaTopicNameForOneTest,
+							Namespace: KafkaTopicNamespace,
+						},
+						Spec: infrav1beta1.KafkaTopicSpec{
+							Address:           KafkaBrokersAddress,
+							Name:              kafkaTopicNameForOneTest,
+							Partitions:        &partitions,
+							ReplicationFactor: &replicationFactor,
+						},
+					}
+					Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
+				})
+
+				It(fmt.Sprintf("Should update %s", configName), func() {
+					By(fmt.Sprintf("By checking that %s is properly updated", configName))
+					latest := &infrav1beta1.KafkaTopic{}
+					Eventually(func() error {
+						err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+						if err != nil {
+							return err
+						}
+						if len(latest.Status.Conditions) == 0 {
+							return errors.New("conditions are 0")
+						}
+						latest.Spec.KafkaTopicConfig = testConfig.kafkaTopicObjectConfigF(testConfig.newValueToSet)
+						err = k8sClient.Update(ctx, latest)
+						if err != nil {
+							return err
+						}
+						return nil
+					}, timeout, interval).Should(Succeed())
+					Eventually(func() string {
+						updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicNameForOneTest)
+						fmt.Printf("Topic in Mock: %+v cn: %s, configName: %s value: %+v\n", updatedTopic, cn, configName, updatedTopic.Config[configName])
+						return updatedTopic.Config[cn]
+					}, timeout, interval).Should(Equal(testConfig.newValueExpectedInKafkaTopicObject))
+				})
+
 			}
-			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
-		})
-
-		It("Should update flush.ms", func() {
-			By("By checking that flush.ms is properly updated")
-			latest := &infrav1beta1.KafkaTopic{}
-			var newFlusMs int64 = 666
-			Eventually(func() error {
-				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
-				if err != nil {
-					return err
-				}
-				if len(latest.Status.Conditions) == 0 {
-					return errors.New("conditions are 0")
-				}
-				latest.Spec.KafkaTopicConfig = &infrav1beta1.KafkaTopicConfig{
-					FlushMs: &newFlusMs,
-				}
-				err = k8sClient.Update(ctx, latest)
-				if err != nil {
-					return err
-				}
-				return nil
-			}, timeout, interval).Should(Succeed())
-			Eventually(func() string {
-				updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
-				return updatedTopic.Config["flush.ms"]
-			}, timeout, interval).Should(Equal(strconv.FormatInt(newFlusMs, 10)))
-		})
-	})
-
-	Context("When updating replication factor for already existing topic", func() {
-		var partitions int64 = 16
-		var replicationFactor int64 = 3
-		kafkaTopicName := "test-update-replication-factor"
-		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
-
-		It("Should create new topic", func() {
-			By("By checking the topic is created")
-			ctx := context.Background()
-			kafkaTopic := &infrav1beta1.KafkaTopic{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "kafka.infra.doodle.com/v1beta1",
-					Kind:       "KafkaTopic",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      kafkaTopicName,
-					Namespace: KafkaTopicNamespace,
-				},
-				Spec: infrav1beta1.KafkaTopicSpec{
-					Address:           KafkaBrokersAddress,
-					Name:              kafkaTopicName,
-					Partitions:        &partitions,
-					ReplicationFactor: &replicationFactor,
-				},
-			}
-			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
-		})
-
-		It("Should refuse to change replication factor", func() {
-			By("By updating replication factor on KafkaTopic object")
-			latest := &infrav1beta1.KafkaTopic{}
-			var newReplicationFactor int64 = 4
-			Eventually(func() error {
-				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
-				if err != nil {
-					return err
-				}
-				if len(latest.Status.Conditions) == 0 {
-					return errors.New("conditions are 0")
-				}
-				latest.Spec.ReplicationFactor = &newReplicationFactor
-				return k8sClient.Update(ctx, latest)
-			}, timeout, interval).Should(Succeed())
-
-			By("By checking that topic is not ready")
-			Eventually(func() error {
-				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
-				if err != nil {
-					return err
-				}
-				if *latest.Spec.ReplicationFactor != newReplicationFactor {
-					return errors.New("replication factor is not changed")
-				}
-				if len(latest.Status.Conditions) == 0 {
-					return errors.New("conditions are 0")
-				}
-				if latest.Status.Conditions[0].Status != metav1.ConditionFalse {
-					return errors.New("Condition is true")
-				}
-				return nil
-			}, timeout, interval).Should(Succeed())
-			By("By checking that reason is that replication factor cannot be modified")
-			Expect(latest.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.ReplicationFactorFailedToChangeReason))
-		})
+		}
 	})
 })

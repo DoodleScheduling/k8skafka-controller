@@ -57,7 +57,7 @@ func (in *KafkaTopicConfig) DeepCopyInto(out *KafkaTopicConfig) {
 	*out = *in
 	if in.CleanupPolicy != nil {
 		in, out := &in.CleanupPolicy, &out.CleanupPolicy
-		*out = new(CleanupPolicy)
+		*out = new(string)
 		**out = **in
 	}
 	if in.CompressionType != nil {

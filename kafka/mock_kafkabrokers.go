@@ -30,6 +30,7 @@ func (kb *MockKafkaBrokers) AddTopic(topic Topic) error {
 }
 
 func (kb *MockKafkaBrokers) UpdateTopic(topic Topic) {
+	fmt.Printf("Updating topic %+v\n", topic)
 	kb.topics[topic.Name] = topic
 }
 

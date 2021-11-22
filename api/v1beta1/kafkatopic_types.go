@@ -58,7 +58,7 @@ type KafkaTopicConfig struct {
 	// The default policy ("delete") will discard old segments when their retention time or size limit has been reached.
 	// The "compact" setting will enable log compaction on the topic.
 	// +optional
-	CleanupPolicy *CleanupPolicy `json:"cleanupPolicy,omitempty"`
+	CleanupPolicy *string `json:"cleanupPolicy,omitempty"`
 
 	// Final compression type for a given topic.
 	// Supported are standard compression codecs: 'gzip', 'snappy', 'lz4', 'zstd').
@@ -319,7 +319,7 @@ func (in *KafkaTopic) GetReplicationFactor() int64 {
 	return *in.Spec.ReplicationFactor
 }
 
-func (in *KafkaTopic) GetCleanupPolicy() *CleanupPolicy {
+func (in *KafkaTopic) GetCleanupPolicy() *string {
 	if in.Spec.KafkaTopicConfig == nil {
 		return nil
 	}
