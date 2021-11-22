@@ -49,6 +49,10 @@ var (
 	cancel    context.CancelFunc
 )
 
+const (
+	numberOfConcurrentReconcilers = 4
+)
+
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
@@ -90,7 +94,7 @@ var _ = BeforeSuite(func(done Done) {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	opts := KafkaTopicReconcilerOptions{MaxConcurrentReconciles: 4}
+	opts := KafkaTopicReconcilerOptions{MaxConcurrentReconciles: numberOfConcurrentReconcilers}
 
 	err = (&KafkaTopicReconciler{
 		Client:      k8sManager.GetClient(),

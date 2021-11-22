@@ -1,8 +1,8 @@
 package kafka
 
 import (
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 )
 
 var DefaultMockKafkaBrokers = MockKafkaBrokers{
@@ -27,6 +27,10 @@ func (kb *MockKafkaBrokers) AddTopic(topic Topic) error {
 	}
 	kb.topics[topic.Name] = topic
 	return nil
+}
+
+func (kb *MockKafkaBrokers) UpdateTopic(topic Topic) {
+	kb.topics[topic.Name] = topic
 }
 
 func (kb *MockKafkaBrokers) ClearAllTopics() {
