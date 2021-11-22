@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"github.com/DoodleScheduling/k8skafka-controller/kafka"
 	"github.com/pkg/errors"
 	"strconv"
@@ -131,6 +130,137 @@ var _ = Describe("KafkaTopic controller", func() {
 		})
 	})
 
+	Context("When decreasing number of partitions", func() {
+		var partitions int64 = 16
+		var replicationFactor int64 = 3
+		kafkaTopicName := "test-decrease-number-of-partitions"
+		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
+
+		It("Should create new topic", func() {
+			By("By checking the topic is created")
+			ctx := context.Background()
+			kafkaTopic := &infrav1beta1.KafkaTopic{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kafka.infra.doodle.com/v1beta1",
+					Kind:       "KafkaTopic",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      kafkaTopicName,
+					Namespace: KafkaTopicNamespace,
+				},
+				Spec: infrav1beta1.KafkaTopicSpec{
+					Address:           KafkaBrokersAddress,
+					Name:              kafkaTopicName,
+					Partitions:        &partitions,
+					ReplicationFactor: &replicationFactor,
+				},
+			}
+			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
+		})
+
+		It("Should refuse to decrease number of partitions ", func() {
+			By("By updating the number of partitions in KafkaTopic object")
+			latest := &infrav1beta1.KafkaTopic{}
+			var newPartitions int64 = 4
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				latest.Spec.Partitions = &newPartitions
+				return k8sClient.Update(ctx, latest)
+			}, timeout, interval).Should(Succeed())
+
+			By("By checking that topic is not ready")
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if *latest.Spec.Partitions != newPartitions {
+					return errors.New("partitions are not changed")
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				if latest.Status.Conditions[0].Status != metav1.ConditionFalse {
+					return errors.New("Condition is true")
+				}
+				return nil
+			}, timeout, interval).Should(Succeed())
+			By("By checking that reason is that partitions cannot be removed")
+			Expect(latest.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.PartitionsFailedToRemoveReason))
+		})
+	})
+
+	Context("When increasing number of partitions", func() {
+		var partitions int64 = 16
+		var replicationFactor int64 = 3
+		kafkaTopicName := "test-increase-number-of-partitions"
+		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
+
+		It("Should create new topic", func() {
+			By("By checking the topic is created")
+			ctx := context.Background()
+			kafkaTopic := &infrav1beta1.KafkaTopic{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kafka.infra.doodle.com/v1beta1",
+					Kind:       "KafkaTopic",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      kafkaTopicName,
+					Namespace: KafkaTopicNamespace,
+				},
+				Spec: infrav1beta1.KafkaTopicSpec{
+					Address:           KafkaBrokersAddress,
+					Name:              kafkaTopicName,
+					Partitions:        &partitions,
+					ReplicationFactor: &replicationFactor,
+				},
+			}
+			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
+		})
+
+		It("Should assign new partitions ", func() {
+			By("By updating the number of partitions in KafkaTopic object")
+			latest := &infrav1beta1.KafkaTopic{}
+			var newPartitions int64 = 18
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				latest.Spec.Partitions = &newPartitions
+				return k8sClient.Update(ctx, latest)
+			}, timeout, interval).Should(Succeed())
+
+			By("By checking that the number of partitions is properly updated")
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				if *latest.Spec.Partitions != newPartitions {
+					return errors.New("partitions are not changed")
+				}
+				return nil
+			}, timeout, interval).Should(Succeed())
+			Eventually(func() int64 {
+				updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
+				return updatedTopic.Partitions
+			}, timeout, interval).Should(Equal(newPartitions))
+		})
+	})
+
 	Context("When updating topic configuration", func() {
 		var partitions int64 = 16
 		var replicationFactor int64 = 3
@@ -243,7 +373,6 @@ var _ = Describe("KafkaTopic controller", func() {
 				if len(latest.Status.Conditions) == 0 {
 					return errors.New("conditions are 0")
 				}
-				fmt.Printf("len: %d, latest.Status: %+v\n", len(latest.Status.Conditions), latest.Status.Conditions[0].Status)
 				if latest.Status.Conditions[0].Status != metav1.ConditionFalse {
 					return errors.New("Condition is true")
 				}
