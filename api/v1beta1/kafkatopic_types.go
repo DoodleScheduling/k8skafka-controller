@@ -64,7 +64,7 @@ type KafkaTopicConfig struct {
 	// Supported are standard compression codecs: 'gzip', 'snappy', 'lz4', 'zstd').
 	// It additionally accepts 'uncompressed' which is equivalent to no compression; and 'producer' which means retain the original compression codec set by the producer.
 	// +optional
-	CompressionType *CompressionType `json:"compressionType,omitempty"`
+	CompressionType *string `json:"compressionType,omitempty"`
 
 	// The amount of time to retain delete tombstone markers for log compacted topics. Specified in milliseconds.
 	// This setting also gives a bound on the time in which a consumer must complete a read if they begin from offset 0
@@ -134,7 +134,7 @@ type KafkaTopicConfig struct {
 	// Define whether the timestamp in the message is message create time or log append time.
 	// The value should be either `CreateTime` or `LogAppendTime`
 	// +optional
-	MessageTimestampType *MessageTimestampType `json:"messageTimestampType,omitempty"`
+	MessageTimestampType *string `json:"messageTimestampType,omitempty"`
 
 	// This configuration controls how frequently the log compactor will attempt to clean the log (assuming LogCompaction is enabled).
 	// By default we will avoid cleaning a log where more than 50% of the log has been compacted.
@@ -194,15 +194,11 @@ type KafkaTopicConfig struct {
 	UncleanLeaderElectionEnable *bool `json:"uncleanLeaderElectionEnable,omitempty"`
 }
 
-type CleanupPolicy string
-
 const (
 	CleanupPolicyDelete        = "delete"
 	CleanupPolicyCompact       = "compact"
 	CleanupPolicyDeleteCompact = "delete,compact"
 )
-
-type CompressionType string
 
 const (
 	CompressionTypeGZIP         = "gzip"
@@ -212,8 +208,6 @@ const (
 	CompressionTypeUncompressed = "uncompressed"
 	CompressionTypeProducer     = "producer"
 )
-
-type MessageTimestampType string
 
 const (
 	MessageTimestampTypeCreateTime    = "CreateTime"
@@ -326,7 +320,7 @@ func (in *KafkaTopic) GetCleanupPolicy() *string {
 	return in.Spec.KafkaTopicConfig.CleanupPolicy
 }
 
-func (in *KafkaTopic) GetCompressionType() *CompressionType {
+func (in *KafkaTopic) GetCompressionType() *string {
 	if in.Spec.KafkaTopicConfig == nil {
 		return nil
 	}
@@ -410,7 +404,7 @@ func (in *KafkaTopic) GetMessageTimestampDifferenceMaxMs() *int64 {
 	return in.Spec.KafkaTopicConfig.MessageTimestampDifferenceMaxMs
 }
 
-func (in *KafkaTopic) GetMessageTimestampType() *MessageTimestampType {
+func (in *KafkaTopic) GetMessageTimestampType() *string {
 	if in.Spec.KafkaTopicConfig == nil {
 		return nil
 	}

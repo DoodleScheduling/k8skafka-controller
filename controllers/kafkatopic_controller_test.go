@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/DoodleScheduling/k8skafka-controller/kafka"
 	"github.com/pkg/errors"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -333,6 +332,29 @@ var _ = Describe("KafkaTopic controller", func() {
 		var replicationFactor int64 = 3
 		kafkaTopicName := "test-update-configuration"
 
+		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
+		It("Should create new topic", func() {
+			By("By checking the topic is created")
+			ctx := context.Background()
+			kafkaTopic := &infrav1beta1.KafkaTopic{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kafka.infra.doodle.com/v1beta1",
+					Kind:       "KafkaTopic",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      kafkaTopicName,
+					Namespace: KafkaTopicNamespace,
+				},
+				Spec: infrav1beta1.KafkaTopicSpec{
+					Address:           KafkaBrokersAddress,
+					Name:              kafkaTopicName,
+					Partitions:        &partitions,
+					ReplicationFactor: &replicationFactor,
+				},
+			}
+			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
+		})
+
 		type KafkaConfigHolder struct {
 			newValueToSet                      interface{}
 			newValueExpectedInKafkaTopicObject interface{}
@@ -342,9 +364,7 @@ var _ = Describe("KafkaTopic controller", func() {
 		kafkaConfigTestData := map[string][]KafkaConfigHolder{
 			CleanupPolicy: {
 				{
-					newValueToSet:                      infrav1beta1.CleanupPolicyCompact,
-					newValueExpectedInKafkaTopicObject: infrav1beta1.CleanupPolicyCompact,
-					kafkaTopicObjectConfigF: func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+					infrav1beta1.CleanupPolicyCompact, infrav1beta1.CleanupPolicyCompact, func(v interface{}) *infrav1beta1.KafkaTopicConfig {
 						vv := v.(string)
 						return &infrav1beta1.KafkaTopicConfig{
 							CleanupPolicy: &vv,
@@ -352,24 +372,49 @@ var _ = Describe("KafkaTopic controller", func() {
 					},
 				},
 			},
-
-			IndexIntervalBytes: {
+			CompressionType: {
 				{
-					newValueToSet:                      int64(2048),
-					newValueExpectedInKafkaTopicObject: "2048",
-					kafkaTopicObjectConfigF: func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+					infrav1beta1.CompressionTypeSnappy, infrav1beta1.CompressionTypeSnappy, func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(string)
+						return &infrav1beta1.KafkaTopicConfig{
+							CompressionType: &vv,
+						}
+					},
+				},
+			},
+			DeleteRetentionMs: {
+				{
+					int64(60000), "60000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
 						vv := v.(int64)
 						return &infrav1beta1.KafkaTopicConfig{
-							IndexIntervalBytes: &vv,
+							DeleteRetentionMs: &vv,
+						}
+					},
+				},
+			},
+			FileDeleteDelayMs: {
+				{
+					int64(1000), "1000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							FileDeleteDelayMs: &vv,
+						}
+					},
+				},
+			},
+			FlushMessages: {
+				{
+					int64(5), "5", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							FlushMessages: &vv,
 						}
 					},
 				},
 			},
 			FlushMs: {
 				{
-					newValueToSet:                      int64(666),
-					newValueExpectedInKafkaTopicObject: "666",
-					kafkaTopicObjectConfigF: func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+					int64(666), "666", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
 						vv := v.(int64)
 						return &infrav1beta1.KafkaTopicConfig{
 							FlushMs: &vv,
@@ -377,36 +422,203 @@ var _ = Describe("KafkaTopic controller", func() {
 					},
 				},
 			},
+			FollowerReplicationThrottledReplicas: {
+				{
+					"*", "*", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(string)
+						return &infrav1beta1.KafkaTopicConfig{
+							FollowerReplicationThrottledReplicas: &vv,
+						}
+					},
+				},
+			},
+			IndexIntervalBytes: {
+				{
+					int64(2048), "2048", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							IndexIntervalBytes: &vv,
+						}
+					},
+				},
+			},
+			LeaderReplicationThrottledReplicas: {
+				{
+					"*", "*", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(string)
+						return &infrav1beta1.KafkaTopicConfig{
+							LeaderReplicationThrottledReplicas: &vv,
+						}
+					},
+				},
+			},
+			MaxMessageBytes: {
+				{
+					int64(999999), "999999", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							MaxMessageBytes: &vv,
+						}
+					},
+				},
+			},
+			MessageDownconversionEnable: {
+				{
+					true, "true", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(bool)
+						return &infrav1beta1.KafkaTopicConfig{
+							MessageDownconversionEnable: &vv,
+						}
+					},
+				},
+			},
+			MessageFormatVersion: {
+				{
+					"0.10.0", "0.10.0", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(string)
+						return &infrav1beta1.KafkaTopicConfig{
+							MessageFormatVersion: &vv,
+						}
+					},
+				},
+			},
+			MessageTimestampDifferenceMaxMs: {
+				{
+					int64(10), "10", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							MessageTimestampDifferenceMaxMs: &vv,
+						}
+					},
+				},
+			},
+			MessageTimestampType: {
+				{
+					"LogAppendTime", "LogAppendTime", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(string)
+						return &infrav1beta1.KafkaTopicConfig{
+							MessageTimestampType: &vv,
+						}
+					},
+				},
+			},
+			MinCleanableDirtyRatio: {
+				{
+					int64(50), "50", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							MinCleanableDirtyRatio: &vv,
+						}
+					},
+				},
+			},
+			MinCompactionLagMs: {
+				{
+					int64(10000), "10000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							MinCompactionLagMs: &vv,
+						}
+					},
+				},
+			},
+			MinInsyncReplicas: {
+				{
+					int64(2), "2", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							MinInsyncReplicas: &vv,
+						}
+					},
+				},
+			},
+			Preallocate: {
+				{
+					true, "true", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(bool)
+						return &infrav1beta1.KafkaTopicConfig{
+							Preallocate: &vv,
+						}
+					},
+				},
+			},
+			RetentionBytes: {
+				{
+					int64(1000000), "1000000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							RetentionBytes: &vv,
+						}
+					},
+				},
+			},
+			RetentionMs: {
+				{
+					int64(1000), "1000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							RetentionMs: &vv,
+						}
+					},
+				},
+			},
+			SegmentBytes: {
+				{
+					int64(500000), "500000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							SegmentBytes: &vv,
+						}
+					},
+				},
+			},
+			SegmentIndexBytes: {
+				{
+					int64(250000), "250000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							SegmentIndexBytes: &vv,
+						}
+					},
+				},
+			},
+			SegmentJitterMs: {
+				{
+					int64(1000), "1000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							SegmentJitterMs: &vv,
+						}
+					},
+				},
+			},
+			SegmentMs: {
+				{
+					int64(2000), "2000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(int64)
+						return &infrav1beta1.KafkaTopicConfig{
+							SegmentMs: &vv,
+						}
+					},
+				},
+			},
+			UncleanLeaderElectionEnable: {
+				{
+					true, "true", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+						vv := v.(bool)
+						return &infrav1beta1.KafkaTopicConfig{
+							UncleanLeaderElectionEnable: &vv,
+						}
+					},
+				},
+			},
 		}
 
 		for configName, testConfigs := range kafkaConfigTestData {
-			for i, testConfig := range testConfigs {
-				// store into variable in this closure, otherwise next loop iteration will override configName variable
+			for _, testConfig := range testConfigs {
+				// store into variable in this closure, otherwise next loop iteration will override variable
 				cn := configName
-
-				kafkaTopicNameForOneTest := kafkaTopicName + "-" + strings.ToLower(configName) + "-" + fmt.Sprint(i)
-				kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicNameForOneTest, Namespace: KafkaTopicNamespace}
-				It("Should create new topic", func() {
-					By("By checking the topic is created")
-					ctx := context.Background()
-					kafkaTopic := &infrav1beta1.KafkaTopic{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "kafka.infra.doodle.com/v1beta1",
-							Kind:       "KafkaTopic",
-						},
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      kafkaTopicNameForOneTest,
-							Namespace: KafkaTopicNamespace,
-						},
-						Spec: infrav1beta1.KafkaTopicSpec{
-							Address:           KafkaBrokersAddress,
-							Name:              kafkaTopicNameForOneTest,
-							Partitions:        &partitions,
-							ReplicationFactor: &replicationFactor,
-						},
-					}
-					Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
-				})
+				tc := testConfig
 
 				It(fmt.Sprintf("Should update %s", configName), func() {
 					By(fmt.Sprintf("By checking that %s is properly updated", configName))
@@ -419,7 +631,7 @@ var _ = Describe("KafkaTopic controller", func() {
 						if len(latest.Status.Conditions) == 0 {
 							return errors.New("conditions are 0")
 						}
-						latest.Spec.KafkaTopicConfig = testConfig.kafkaTopicObjectConfigF(testConfig.newValueToSet)
+						latest.Spec.KafkaTopicConfig = tc.kafkaTopicObjectConfigF(tc.newValueToSet)
 						err = k8sClient.Update(ctx, latest)
 						if err != nil {
 							return err
@@ -427,10 +639,9 @@ var _ = Describe("KafkaTopic controller", func() {
 						return nil
 					}, timeout, interval).Should(Succeed())
 					Eventually(func() string {
-						updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicNameForOneTest)
-						fmt.Printf("Topic in Mock: %+v cn: %s, configName: %s value: %+v\n", updatedTopic, cn, configName, updatedTopic.Config[configName])
+						updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
 						return updatedTopic.Config[cn]
-					}, timeout, interval).Should(Equal(testConfig.newValueExpectedInKafkaTopicObject))
+					}, timeout, interval).Should(Equal(tc.newValueExpectedInKafkaTopicObject))
 				})
 
 			}

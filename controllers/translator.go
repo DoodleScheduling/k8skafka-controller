@@ -56,7 +56,7 @@ func TranslateKafkaTopicV1Beta1(topic v1beta1.KafkaTopic) *kafka.Topic {
 		c[CleanupPolicy] = *topic.GetCleanupPolicy()
 	}
 	if topic.GetCompressionType() != nil {
-		c[CompressionType] = string(*topic.GetCompressionType())
+		c[CompressionType] = *topic.GetCompressionType()
 	}
 	if topic.GetDeleteRetentionMs() != nil {
 		c[DeleteRetentionMs] = strconv.FormatInt(*topic.GetDeleteRetentionMs(), 10)
@@ -92,7 +92,7 @@ func TranslateKafkaTopicV1Beta1(topic v1beta1.KafkaTopic) *kafka.Topic {
 		c[MessageTimestampDifferenceMaxMs] = strconv.FormatInt(*topic.GetMessageTimestampDifferenceMaxMs(), 10)
 	}
 	if topic.GetMessageTimestampType() != nil {
-		c[MessageTimestampType] = string(*topic.GetMessageTimestampType())
+		c[MessageTimestampType] = *topic.GetMessageTimestampType()
 	}
 	if topic.GetMinCleanableDirtyRatio() != nil {
 		c[MinCleanableDirtyRatio] = strconv.FormatInt(*topic.GetMinCleanableDirtyRatio(), 10)

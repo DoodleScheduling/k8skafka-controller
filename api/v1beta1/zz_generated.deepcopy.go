@@ -62,7 +62,7 @@ func (in *KafkaTopicConfig) DeepCopyInto(out *KafkaTopicConfig) {
 	}
 	if in.CompressionType != nil {
 		in, out := &in.CompressionType, &out.CompressionType
-		*out = new(CompressionType)
+		*out = new(string)
 		**out = **in
 	}
 	if in.DeleteRetentionMs != nil {
@@ -122,7 +122,7 @@ func (in *KafkaTopicConfig) DeepCopyInto(out *KafkaTopicConfig) {
 	}
 	if in.MessageTimestampType != nil {
 		in, out := &in.MessageTimestampType, &out.MessageTimestampType
-		*out = new(MessageTimestampType)
+		*out = new(string)
 		**out = **in
 	}
 	if in.MinCleanableDirtyRatio != nil {
