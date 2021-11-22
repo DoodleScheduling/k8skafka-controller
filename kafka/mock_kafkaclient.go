@@ -1,16 +1,17 @@
 package kafka
 
-import "context"
+import (
+	"context"
+)
 
 type MockKafkaClient struct{}
 
-// TODO implement
 func NewMockKafkaClient() MockKafkaClient {
 	return MockKafkaClient{}
 }
 
 func (kc MockKafkaClient) CreateTopic(address string, topic Topic) error {
-	return nil
+	return DefaultMockKafkaBrokers.AddTopic(topic)
 }
 func (kc MockKafkaClient) CreatePartitions(ctx context.Context, address string, topic Topic, numberOfPartitions int64) error {
 	return nil
