@@ -73,4 +73,5 @@ jobs:
           kubectl -n k8skafka-system describe kafkatopic
           kubectl -n k8skafka-system get all
           kubectl -n k8skafka-system logs deploy/k8skafka-controller
+          kubectl -n kafka get all
           kubectl -n minio get all
