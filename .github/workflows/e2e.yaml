@@ -68,7 +68,6 @@ jobs:
           kubectl -n k8skafka-system wait kafkatopic/test-create-new --for=condition=Ready --timeout=1m
           kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092
           res=$(kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092)
-          echo $res
           [[ -z "$res" ]] && (there is no topic test-create-new && exit 1) || echo "topic test-create-new successfully created"
       - name: Logs
         run: |
