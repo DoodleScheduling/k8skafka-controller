@@ -175,7 +175,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			}, timeout, interval).Should(Succeed())
 
 			By("By checking that topic is not ready")
-			Eventually(func() error {
+			EventuallyWithOffset(1, func() error {
 				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
 				if err != nil {
 					return err
@@ -190,7 +190,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("Condition is true")
 				}
 				return nil
-			}, timeout*2, interval*2).Should(Succeed())
+			}, timeout*3, interval*3).Should(Succeed())
 			By("By checking that reason is that replication factor cannot be modified")
 			Expect(latest.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.ReplicationFactorFailedToChangeReason))
 		})
