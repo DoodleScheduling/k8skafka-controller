@@ -48,7 +48,15 @@ jobs:
         run: kind load docker-image test/k8skafka-controller:latest
       - name: Deploy controller
         run: make deploy IMG=test/k8skafka-controller:latest
-
+      - name: Setup Kafka
+        env:
+          KAFKA_VERSION: ${{ '5.5.2' }}
+        run: |
+          kubectl create ns kafka
+          helm repo add confluentinc https://confluentinc.github.io/cp-helm-charts/
+          helm upgrade --wait -i kafka confluentinc/cp-helm-charts \
+          --version $KAFKA_VERSION \
+          --namespace kafka \
       - name: Logs
         run: |
           kubectl -n k8skafka-system wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
