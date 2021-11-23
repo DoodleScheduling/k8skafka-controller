@@ -190,7 +190,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("Condition is true")
 				}
 				return nil
-			}, timeout, interval).Should(Succeed())
+			}, timeout*2, interval*2).Should(Succeed())
 			By("By checking that reason is that replication factor cannot be modified")
 			Expect(latest.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.ReplicationFactorFailedToChangeReason))
 		})
@@ -256,7 +256,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("Condition is true")
 				}
 				return nil
-			}, timeout, interval).Should(Succeed())
+			}, timeout*2, interval*2).Should(Succeed())
 			By("By checking that reason is that partitions cannot be removed")
 			Expect(latest.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.PartitionsFailedToRemoveReason))
 		})
