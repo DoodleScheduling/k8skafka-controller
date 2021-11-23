@@ -59,6 +59,9 @@ generate: controller-gen
 docker-build: test
 	docker build . -t ${IMG}
 
+docker-build-without-tests: generate fmt vet manifests
+	docker build . -t ${IMG}
+
 # Push the docker image
 docker-push:
 	docker push ${IMG}
