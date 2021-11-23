@@ -389,4 +389,147 @@ var _ = Describe("KafkaTopic controller", func() {
 			}
 		}
 	})
+
+	Context("When updating topic configuration for topic that already has configuration", func() {
+		var partitions int64 = 16
+		var replicationFactor int64 = 3
+		var retentionMs int64 = 1000
+		var flushMs int64 = 666
+		kafkaTopicName := "test-update-configuration-for-existing-configuration"
+		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
+
+		It("Should create new topic", func() {
+			By("By checking the topic is created")
+			ctx := context.Background()
+			kafkaTopic := &infrav1beta1.KafkaTopic{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kafka.infra.doodle.com/v1beta1",
+					Kind:       "KafkaTopic",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      kafkaTopicName,
+					Namespace: KafkaTopicNamespace,
+				},
+				Spec: infrav1beta1.KafkaTopicSpec{
+					Address:           KafkaBrokersAddress,
+					Name:              kafkaTopicName,
+					Partitions:        &partitions,
+					ReplicationFactor: &replicationFactor,
+					KafkaTopicConfig: &infrav1beta1.KafkaTopicConfig{
+						RetentionMs: &retentionMs,
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
+		})
+
+		It("Should keep existing configuration", func() {
+			By("By adding new configuration option")
+			latest := &infrav1beta1.KafkaTopic{}
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				if latest.Spec.KafkaTopicConfig == nil {
+					return errors.New("config is nil")
+				}
+				latest.Spec.KafkaTopicConfig.FlushMs = &flushMs
+				err = k8sClient.Update(ctx, latest)
+				if err != nil {
+					return err
+				}
+				return nil
+			}, timeout, interval).Should(Succeed())
+
+			By("By checking that new configuration option is added to topic in brokers")
+			Eventually(func() string {
+				updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
+				return updatedTopic.Config[FlushMs]
+			}, timeout, interval).Should(Equal(fmt.Sprint(flushMs)))
+
+			By("By checking that preexisting topic configuration option is still in brokers")
+			Eventually(func() string {
+				updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
+				return updatedTopic.Config[RetentionMs]
+			}, timeout, interval).Should(Equal(fmt.Sprint(retentionMs)))
+		})
+	})
+
+	Context("When removing one configuration option from topic", func() {
+		var partitions int64 = 16
+		var replicationFactor int64 = 3
+		var retentionMs int64 = 1000
+		var flushMs int64 = 666
+		kafkaTopicName := "test-update-configuration-for-removing-configuration"
+		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
+		It("Should create new topic", func() {
+			By("By checking the topic is created")
+			ctx := context.Background()
+			kafkaTopic := &infrav1beta1.KafkaTopic{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kafka.infra.doodle.com/v1beta1",
+					Kind:       "KafkaTopic",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      kafkaTopicName,
+					Namespace: KafkaTopicNamespace,
+				},
+				Spec: infrav1beta1.KafkaTopicSpec{
+					Address:           KafkaBrokersAddress,
+					Name:              kafkaTopicName,
+					Partitions:        &partitions,
+					ReplicationFactor: &replicationFactor,
+					KafkaTopicConfig: &infrav1beta1.KafkaTopicConfig{
+						RetentionMs: &retentionMs,
+						FlushMs:     &flushMs,
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
+		})
+
+		It("Should remove one configuration option", func() {
+			By("By removing a configuration option")
+			latest := &infrav1beta1.KafkaTopic{}
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				if latest.Spec.KafkaTopicConfig == nil {
+					return errors.New("config is nil")
+				}
+				latest.Spec.KafkaTopicConfig = &infrav1beta1.KafkaTopicConfig{
+					RetentionMs: &retentionMs,
+				}
+				err = k8sClient.Update(ctx, latest)
+				if err != nil {
+					return err
+				}
+				return nil
+			}, timeout, interval).Should(Succeed())
+
+			By("By checking that removed configuration option is removed from topic in broker")
+			Eventually(func() bool {
+				updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
+				if _, ok := updatedTopic.Config[FlushMs]; !ok {
+					return true
+				}
+				return false
+			}, timeout, interval).Should(BeTrue())
+
+			By("By checking that other topic configuration option is still in brokers")
+			Eventually(func() string {
+				updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
+				return updatedTopic.Config[RetentionMs]
+			}, timeout, interval).Should(Equal(fmt.Sprint(retentionMs)))
+		})
+	})
 })
