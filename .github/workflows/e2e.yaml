@@ -56,7 +56,11 @@ jobs:
           helm repo add confluentinc https://confluentinc.github.io/cp-helm-charts/
           helm upgrade --wait -i kafka confluentinc/cp-helm-charts \
           --version $KAFKA_VERSION \
-          --namespace kafka \
+          --namespace kafka
+      - name: Run Kafka e2e tests
+        run: |
+          kubectl -n k8skafka-system apply -f ./config/testdata/kafkatopics/create-new
+          kubectl -n k8skafka-system wait kafkatopic/test-create-new --for=condition=Ready --timeout=1m
       - name: Logs
         run: |
           kubectl -n k8skafka-system wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
