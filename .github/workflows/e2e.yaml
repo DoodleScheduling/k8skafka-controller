@@ -50,7 +50,7 @@ jobs:
         run: make deploy IMG=test/k8skafka-controller:latest
       - name: Setup Kafka
         env:
-          KAFKA_VERSION: ${{ '5.5.0' }}
+          KAFKA_VERSION: ${{ '0.5.0' }}
         run: |
           kubectl create ns kafka
           helm repo add confluentinc https://confluentinc.github.io/cp-helm-charts/
