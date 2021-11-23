@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8skafka-controller
+  labels:
+    control-plane: controller
+spec:
+  selector:
+    matchLabels:
+      app: k8skafka-controller
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: k8skafka-controller
+    spec:
+      containers:
+      - command:
+        - /manager
+#        args:
+#        - --enable-leader-election
+        image: controller:latest
+        imagePullPolicy: IfNotPresent
+        name: manager
+        resources:
+          limits:
+            cpu: 100m
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      terminationGracePeriodSeconds: 10
