@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+const DefaultMockKafkaAddress = "kafka:9092"
+
 var DefaultMockKafkaBrokers = MockKafkaBrokers{
 	topics: map[string]Topic{},
 }

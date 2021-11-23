@@ -14,14 +14,14 @@ type KafkaTopicConfigHolder struct {
 	createKafkaTopicObjectF func(interface{}) *infrav1beta1.KafkaTopicConfig
 }
 
-// KafkaConfigTestData
-/* KafkaConfigTestData holds testing data for each topic configuration option.
+// KafkaTopicConfigTestData
+/* KafkaTopicConfigTestData holds testing data for each topic configuration option.
 It is a map of slices, where each entry in the map represents one configuration option, and entries in slices are possible tests variations.
 To add a new test for existing configuration option, simply create new entry in slice for appropriate config option
 To add a completely new config option, add a new key with map (value is a slice of KafkaTopicConfigHolder)
 To change existing tests, simply change it :)
 */
-var KafkaConfigTestData = map[string][]KafkaTopicConfigHolder{
+var KafkaTopicConfigTestData = map[string][]KafkaTopicConfigHolder{
 	CleanupPolicy: {
 		{
 			infrav1beta1.CleanupPolicyCompact, infrav1beta1.CleanupPolicyCompact, func(v interface{}) *infrav1beta1.KafkaTopicConfig {

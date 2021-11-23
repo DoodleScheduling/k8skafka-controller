@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("KafkaTopic controller", func() {
 	const (
-		KafkaBrokersAddress = "kafka-client.default:9092"
+		KafkaBrokersAddress = kafka.DefaultMockKafkaAddress
 		KafkaTopicNamespace = "default"
 
 		timeout  = time.Second * 10
@@ -327,6 +327,7 @@ var _ = Describe("KafkaTopic controller", func() {
 		})
 	})
 
+	// These series of tests use data extracted to separate struct (KafkaTopicConfigTestData). For each data entry, one test is created
 	Context("When updating topic configuration", func() {
 		var partitions int64 = 16
 		var replicationFactor int64 = 3
@@ -355,8 +356,8 @@ var _ = Describe("KafkaTopic controller", func() {
 			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
 		})
 
-		// Create a test for each entry in KafkaConfigTestData (kafkatopic_controller_test_data.go)
-		for configName, testConfigs := range KafkaConfigTestData {
+		// Create a test for each entry in KafkaTopicConfigTestData (kafkatopic_controller_test_data.go)
+		for configName, testConfigs := range KafkaTopicConfigTestData {
 			for _, testConfig := range testConfigs {
 				// store into variable in this closure, otherwise next loop iteration will override variable
 				cn := configName
