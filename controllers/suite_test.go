@@ -50,7 +50,7 @@ var (
 )
 
 const (
-	numberOfConcurrentReconcilers = 4
+	numberOfConcurrentReconcilers = 1
 )
 
 func TestAPIs(t *testing.T) {
