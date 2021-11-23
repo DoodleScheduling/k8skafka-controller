@@ -69,7 +69,7 @@ jobs:
           kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092
           res=$(kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092)
           echo $res
-          [ -z "$res" ] && exit 1 || echo "topic test-create-new successfully created"
+          [[ -z "$res" ]] && (there is no topic test-create-new && exit 1) || echo "topic test-create-new successfully created"
       - name: Logs
         run: |
           kubectl -n k8skafka-system wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
