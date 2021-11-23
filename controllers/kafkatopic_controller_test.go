@@ -130,75 +130,6 @@ var _ = Describe("KafkaTopic controller", func() {
 		})
 	})
 
-	Context("When updating replication factor for already existing topic", func() {
-		var partitions int64 = 16
-		var replicationFactor int64 = 3
-		kafkaTopicName := "test-update-replication-factor"
-		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
-
-		It("Should create new topic", func() {
-			By("By checking the topic is created")
-			ctx := context.Background()
-			kafkaTopic := &infrav1beta1.KafkaTopic{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "kafka.infra.doodle.com/v1beta1",
-					Kind:       "KafkaTopic",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      kafkaTopicName,
-					Namespace: KafkaTopicNamespace,
-				},
-				Spec: infrav1beta1.KafkaTopicSpec{
-					Address:           KafkaBrokersAddress,
-					Name:              kafkaTopicName,
-					Partitions:        &partitions,
-					ReplicationFactor: &replicationFactor,
-				},
-			}
-			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
-		})
-
-		It("Should refuse to change replication factor", func() {
-			By("By updating replication factor on KafkaTopic object")
-			latest := &infrav1beta1.KafkaTopic{}
-			var newReplicationFactor int64 = 4
-			Eventually(func() error {
-				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
-				if err != nil {
-					return err
-				}
-				if len(latest.Status.Conditions) == 0 {
-					return errors.New("conditions are 0")
-				}
-				latest.Spec.ReplicationFactor = &newReplicationFactor
-				return k8sClient.Update(ctx, latest)
-			}, timeout, interval).Should(Succeed())
-
-			By("By checking that topic is not ready")
-			latestUpdated := &infrav1beta1.KafkaTopic{}
-			EventuallyWithOffset(1, func() error {
-				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latestUpdated)
-				if err != nil {
-					return err
-				}
-				replicationFactorFromObject := *latestUpdated.Spec.ReplicationFactor
-				if replicationFactorFromObject != newReplicationFactor {
-					return errors.New("replication factor is not changed")
-				}
-				if len(latestUpdated.Status.Conditions) == 0 {
-					return errors.New("conditions are 0")
-				}
-				fmt.Printf("Conditions: %+v\n", latestUpdated.Status.Conditions)
-				if latestUpdated.Status.Conditions[0].Status != metav1.ConditionFalse {
-					return errors.New("Condition is true")
-				}
-				return nil
-			}, timeout*3, interval).Should(Succeed())
-			By("By checking that reason is that replication factor cannot be modified")
-			Expect(latestUpdated.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.ReplicationFactorFailedToChangeReason))
-		})
-	})
-
 	Context("When decreasing number of partitions", func() {
 		var partitions int64 = 16
 		var replicationFactor int64 = 3
@@ -327,6 +258,72 @@ var _ = Describe("KafkaTopic controller", func() {
 				updatedTopic := kafka.DefaultMockKafkaBrokers.GetTopic(kafkaTopicName)
 				return updatedTopic.Partitions
 			}, timeout, interval).Should(Equal(newPartitions))
+		})
+	})
+
+	Context("When changing replication factor for already existing topic", func() {
+		var partitions int64 = 16
+		var replicationFactor int64 = 3
+		kafkaTopicName := "test-change-replication-factor"
+		kafkaTopicLookupKey := types.NamespacedName{Name: kafkaTopicName, Namespace: KafkaTopicNamespace}
+
+		It("Should create new topic", func() {
+			By("By checking the topic is created")
+			ctx := context.Background()
+			kafkaTopic := &infrav1beta1.KafkaTopic{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "kafka.infra.doodle.com/v1beta1",
+					Kind:       "KafkaTopic",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      kafkaTopicName,
+					Namespace: KafkaTopicNamespace,
+				},
+				Spec: infrav1beta1.KafkaTopicSpec{
+					Address:           KafkaBrokersAddress,
+					Name:              kafkaTopicName,
+					Partitions:        &partitions,
+					ReplicationFactor: &replicationFactor,
+				},
+			}
+			Expect(k8sClient.Create(ctx, kafkaTopic)).Should(Succeed())
+		})
+
+		It("Should refuse to change replication factor", func() {
+			By("By updating the replication factor in KafkaTopic object")
+			latest := &infrav1beta1.KafkaTopic{}
+			var newReplicationFactor int64 = 4
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				latest.Spec.ReplicationFactor = &newReplicationFactor
+				return k8sClient.Update(ctx, latest)
+			}, timeout, interval).Should(Succeed())
+
+			By("By checking that topic is not ready")
+			Eventually(func() error {
+				err := k8sClient.Get(ctx, kafkaTopicLookupKey, latest)
+				if err != nil {
+					return err
+				}
+				if *latest.Spec.ReplicationFactor != newReplicationFactor {
+					return errors.New("replication factor is not changed")
+				}
+				if len(latest.Status.Conditions) == 0 {
+					return errors.New("conditions are 0")
+				}
+				if latest.Status.Conditions[0].Status != metav1.ConditionFalse {
+					return errors.New("Condition is true")
+				}
+				return nil
+			}, timeout*2, interval).Should(Succeed())
+			By("By checking that reason is that replication factor cannot be changed")
+			Expect(latest.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.ReplicationFactorFailedToChangeReason))
 		})
 	})
 
