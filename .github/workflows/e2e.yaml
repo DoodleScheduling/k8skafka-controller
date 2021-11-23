@@ -51,7 +51,7 @@ jobs:
 
       - name: Logs
         run: |
-          kubectl wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
+          kubectl -n k8skafka-system wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
       - name: Debug failure
         if: failure()
         run: |

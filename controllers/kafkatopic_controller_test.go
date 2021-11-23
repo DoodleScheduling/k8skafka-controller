@@ -188,11 +188,12 @@ var _ = Describe("KafkaTopic controller", func() {
 				if len(latestUpdated.Status.Conditions) == 0 {
 					return errors.New("conditions are 0")
 				}
+				fmt.Printf("Conditions: %+v\n", latestUpdated.Status.Conditions)
 				if latestUpdated.Status.Conditions[0].Status != metav1.ConditionFalse {
 					return errors.New("Condition is true")
 				}
 				return nil
-			}, timeout*3, interval*3).Should(Succeed())
+			}, timeout*3, interval).Should(Succeed())
 			By("By checking that reason is that replication factor cannot be modified")
 			Expect(latestUpdated.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.ReplicationFactorFailedToChangeReason))
 		})
@@ -258,7 +259,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("Condition is true")
 				}
 				return nil
-			}, timeout*2, interval*2).Should(Succeed())
+			}, timeout*2, interval).Should(Succeed())
 			By("By checking that reason is that partitions cannot be removed")
 			Expect(latest.Status.Conditions[0].Reason).Should(Equal(infrav1beta1.PartitionsFailedToRemoveReason))
 		})
