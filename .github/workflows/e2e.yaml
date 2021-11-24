@@ -75,16 +75,16 @@ jobs:
           echo "test adding new partitions"
           kubectl -n k8skafka-system apply -f ./config/testdata/kafkatopics/add-partitions
           sleep 2
-          expectedPartitions=20; e=true; i=1; while [ $i -le 5 ]; do \
+          expectedOutput=21; e=true; i=1; while [ $i -le 5 ]; do \
           res=$(kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092); \
           echo "$res"; \
-          res=$(echo $res | tail -n+2 | wc -l | xargs); \
-          if [[ $res == $expectedPartitions ]]; then \
-          echo "topic has expected number of partitions: $expectedPartitions"; \
+          res=$(echo $res | wc -l | xargs); \
+          if [[ $res == $expectedOutput ]]; then \
+          echo "topic has expected number of partitions (one line is for headline): $expectedOutput"; \
           e=false; \
           break; \
           else \
-          echo "expected $expectedPartitions partitions, got $res"; \
+          echo "expected $expectedOutput, got $res"; \
           let "i+=1"; \
           sleep 3; \
           fi; \
