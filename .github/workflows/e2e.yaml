@@ -94,7 +94,7 @@ jobs:
           fi
 
           echo "test change cleanup policy"
-          kubectl -n k8skafka-system apply -f ./config/testdata/kafkatopics/add-partitions
+          kubectl -n k8skafka-system apply -f ./config/testdata/kafkatopics/change-cleanup-policy
           sleep 2
           expectedPolicy="cleanup.policy=compact,delete"; e=true; i=1; while [ $i -le 5 ]; do \
           res=$(kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092); \
