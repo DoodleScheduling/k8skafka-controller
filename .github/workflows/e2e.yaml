@@ -113,6 +113,28 @@ jobs:
           echo "failed to get required cleanup policy in time"; \
           exit 1; \
           fi
+
+          echo "test delete topic"
+          kubectl -n k8skafka-system delete kafkatopic/test-create-new
+          sleep 2
+          expectedResult="NotFound"; e=true; i=1; while [ $i -le 5 ]; do \
+          res=$(kubectl -n k8skafka-system get kafkatopic/test-create-new); \
+          pol=$(echo "$res" | grep "$expectedResult" | wc -l | xargs); \
+          if [[ "$pol" == "$expectedResult" ]]; then \
+          e=false; \
+          break; \
+          else \
+          echo "KafkaTopic test-create-new not yet deleted. Res: $res"; \
+          let "i+=1"; \
+          sleep 3; \
+          fi; \
+          done
+          if [[ $e == true ]]; then \
+          echo "failed to delete KafkaTopic in time"; \
+          exit 1; \
+          fi
+          res=$(kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092)
+          [[ -z "$res" ]] && (there is no topic test-create-new && exit 1) || echo "topic test-create-new still exists, as expected"
       - name: Logs
         run: |
           kubectl -n k8skafka-system wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
