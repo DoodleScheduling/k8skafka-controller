@@ -78,7 +78,8 @@ jobs:
           res=$(kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092); \
           echo "--- $i ---"; \
           echo "$res"; \
-          $(( i++ )); \
+          let "i+=1"; \
+          echo "waiting for next iteration"; \
           sleep 5; \
           done
       - name: Logs
