@@ -57,11 +57,13 @@ jobs:
           helm upgrade --wait -i kafka confluentinc/cp-helm-charts \
           --version $KAFKA_VERSION \
           --namespace kafka
+          kubectl -n kafka wait kafka-cp-kafka-0 --for=condition=Ready --timeout=3m
+          kubectl -n kafka wait kafka-cp-kafka-1 --for=condition=Ready --timeout=3m
+          kubectl -n kafka wait kafka-cp-kafka-2 --for=condition=Ready --timeout=3m
       - name: Setup Kafka client
         run: |
           kubectl -n kafka apply -f ./config/testdata/test-kafka-client.yaml
           kubectl -n kafka wait --for=condition=ready pod -l app=kafka-client
-
       - name: Run Kafka e2e tests
         run: |
           kubectl -n k8skafka-system apply -f ./config/testdata/kafkatopics/create-new
