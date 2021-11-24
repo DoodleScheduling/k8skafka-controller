@@ -119,8 +119,7 @@ jobs:
           sleep 2
           expectedResult="NotFound"; e=true; i=1; while [ $i -le 5 ]; do \
           res=$(kubectl -n k8skafka-system get kafkatopic/test-create-new || echo "NotFound"); \
-          pol=$(echo "$res" | grep "$expectedResult" | wc -l | xargs); \
-          if [[ "$pol" == "$expectedResult" ]]; then \
+          if [[ "$res" == "$expectedResult" ]]; then \
           e=false; \
           break; \
           else \
