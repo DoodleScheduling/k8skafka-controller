@@ -86,7 +86,7 @@ func (r *KafkaTopicReconciler) reconcile(ctx context.Context, topic v1beta1.Kafk
 	if err != nil {
 		msg := fmt.Sprintf("Cannot get topic: %s in %s :: %s", kt.Name, topic.GetAddress(), err.Error())
 		r.Recorder.Event(&topic, "Normal", "info", msg)
-		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{}, nil
+		return v1beta1.KafkaTopicNotReady(topic, v1beta1.TopicFailedToGetReason, msg), ctrl.Result{Requeue: true}, nil
 	}
 	if existingTopic == nil {
 		if err := r.KafkaClient.CreateTopic(topic.GetAddress(), *kt); err != nil {
