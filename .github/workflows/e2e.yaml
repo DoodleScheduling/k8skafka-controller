@@ -92,6 +92,27 @@ jobs:
           echo "failed to get required number of partitions in time"; \
           exit 1; \
           fi
+
+          echo "test change cleanup policy"
+          kubectl -n k8skafka-system apply -f ./config/testdata/kafkatopics/add-partitions
+          sleep 2
+          expectedPolicy="cleanup.policy=compact,delete"; e=true; i=1; while [ $i -le 5 ]; do \
+          res=$(kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092); \
+          pol=$(echo "$res" | grep "$expectedPolicy" | wc -l | xargs); \
+          if [[ $pol == 1 ]]; then \
+          echo "topic has expected policy $expectedPolicy"; \
+          e=false; \
+          break; \
+          else \
+          echo "expected to have $expectedPolicy. Full topic: $res"; \
+          let "i+=1"; \
+          sleep 3; \
+          fi; \
+          done
+          if [[ $e == true ]]; then \
+          echo "failed to get required cleanup policy in time"; \
+          exit 1; \
+          fi
       - name: Logs
         run: |
           kubectl -n k8skafka-system wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
