@@ -73,14 +73,13 @@ jobs:
           [[ -z "$res" ]] && (there is no topic test-create-new && exit 1) || echo "topic test-create-new successfully created"
           echo "test adding new partitions"
           kubectl -n k8skafka-system apply -f ./config/testdata/kafkatopics/add-partitions
-          sleep 5
+          sleep 2
           i=1; while [ $i -le 5 ]; do \
           res=$(kubectl -n kafka exec -it kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092); \
-          echo "--- $i ---"; \
-          echo "$res"; \
-          let "i+=1"; \
-          echo "waiting for next iteration"; \
-          sleep 5; \
+          res=$(echo $res | wc -l | xargs);
+          [[ $res == 21 ]] && \
+          (echo "topic has expected number of partitions: 21" && i=6 ) || \
+          (echo "expected 21 partitions, got $res" && let "i+=1"; sleep 3); \
           done
       - name: Logs
         run: |
