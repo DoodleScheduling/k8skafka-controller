@@ -19,10 +19,13 @@ package controllers
 import (
 	"context"
 	"github.com/DoodleScheduling/k8skafka-controller/kafka"
+	k "github.com/segmentio/kafka-go"
+	"net"
 	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -42,11 +45,14 @@ import (
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cfg       *rest.Config
-	k8sClient client.Client
-	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
+	cfg                     *rest.Config
+	k8sClient               client.Client
+	testEnv                 *envtest.Environment
+	ctx                     context.Context
+	cancel                  context.CancelFunc
+	kafkaCluster            *TestingKafkaCluster
+	TestingKafkaClusterHost string
+	//TopicValidator
 )
 
 const (
@@ -61,6 +67,57 @@ func TestAPIs(t *testing.T) {
 		[]Reporter{printer.NewlineReporter{}})
 }
 
+func GetTopic(name string) (*k.Topic, error) {
+	addr, err := net.ResolveTCPAddr("tcp", TestingKafkaClusterHost)
+	if err != nil {
+		return nil, err
+	}
+	kc := k.Client{
+		Addr:    addr,
+		Timeout: 4 * time.Minute,
+	}
+	metadataResponse, err := kc.Metadata(context.Background(), &k.MetadataRequest{
+		Addr:   addr,
+		Topics: []string{name},
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, topic := range metadataResponse.Topics {
+		if topic.Name == name {
+			if topic.Error != nil {
+				return nil, topic.Error
+			}
+			return &topic, nil
+		}
+	}
+	return nil, nil
+}
+
+func GetTopicConfig(name string) ([]k.DescribeConfigResponseResource, error) {
+	addr, err := net.ResolveTCPAddr("tcp", TestingKafkaClusterHost)
+	if err != nil {
+		return nil, err
+	}
+	kc := k.Client{
+		Addr:    addr,
+		Timeout: 4 * time.Minute,
+	}
+	describeConfigsResponse, err := kc.DescribeConfigs(context.Background(), &k.DescribeConfigsRequest{
+		Addr: addr,
+		Resources: []k.DescribeConfigRequestResource{
+			{
+				ResourceType: k.ResourceTypeTopic,
+				ResourceName: name,
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return describeConfigsResponse.Resources, nil
+}
+
 var _ = BeforeSuite(func(done Done) {
 	//logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
@@ -73,6 +130,19 @@ var _ = BeforeSuite(func(done Done) {
 	}
 
 	var err error
+	By("setting up kafka cluster")
+	kafkaCluster, err = NewTestingKafkaCluster()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(kafkaCluster).ToNot(BeNil())
+
+	By("starting kafka cluster")
+	err = kafkaCluster.StartCluster()
+	Expect(err).ToNot(HaveOccurred())
+
+	TestingKafkaClusterHost, err = kafkaCluster.GetKafkaHost()
+	Expect(err).ToNot(HaveOccurred())
+	Expect(TestingKafkaClusterHost).ToNot(BeEmpty())
+
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
@@ -101,7 +171,7 @@ var _ = BeforeSuite(func(done Done) {
 		Scheme:      k8sManager.GetScheme(),
 		Log:         logf.Log,
 		Recorder:    k8sManager.GetEventRecorderFor("KafkaTopic"),
-		KafkaClient: kafka.NewMockKafkaClient(),
+		KafkaClient: kafka.NewDefaultKafkaClient(),
 	}).SetupWithManager(k8sManager, opts)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -117,5 +187,8 @@ var _ = BeforeSuite(func(done Done) {
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
+	Expect(err).ToNot(HaveOccurred())
+
+	err = kafkaCluster.StopCluster()
 	Expect(err).ToNot(HaveOccurred())
 })

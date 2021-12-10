@@ -164,7 +164,7 @@ var KafkaTopicConfigTestData = map[string][]KafkaTopicConfigHolder{
 	},
 	MinCleanableDirtyRatio: {
 		{
-			int64(50), "50", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+			int64(1), "1.0", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
 				vv := v.(int64)
 				return &infrav1beta1.KafkaTopicConfig{
 					MinCleanableDirtyRatio: &vv,
