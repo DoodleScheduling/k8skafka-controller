@@ -3,12 +3,13 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	k "github.com/segmentio/kafka-go"
 	"math"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
+	k "github.com/segmentio/kafka-go"
 )
 
 const (
