@@ -1,6 +1,6 @@
 module github.com/DoodleScheduling/k8skafka-controller
 
-go 1.15
+go 1.16
 
 require (
 	github.com/confluentinc/confluent-kafka-go v1.7.0
