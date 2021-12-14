@@ -52,7 +52,6 @@ var (
 	cancel                  context.CancelFunc
 	kafkaCluster            *TestingKafkaCluster
 	TestingKafkaClusterHost string
-	//TopicValidator
 )
 
 const (
@@ -119,7 +118,6 @@ func GetTopicConfig(name string) ([]k.DescribeConfigResponseResource, error) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	//logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	ctx, cancel = context.WithCancel(context.TODO())

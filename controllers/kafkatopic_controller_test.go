@@ -19,7 +19,6 @@ var _ = Describe("KafkaTopic controller", func() {
 		KafkaTopicNamespace = "default"
 
 		timeout  = time.Second * 10
-		duration = time.Second * 10
 		interval = time.Millisecond * 250
 	)
 
@@ -58,7 +57,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeout*2, interval).Should(BeTrue())
 
 			Expect(createdKafkaTopic.Spec.Name).Should(Equal(kafkaTopicName))
 
@@ -81,7 +80,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return "", errors.New("conditions are 0")
 				}
 				return createdKafkaTopic.Status.Conditions[0].Status, nil
-			}, timeout, interval).Should(Equal(metav1.ConditionTrue))
+			}, timeout*2, interval).Should(Equal(metav1.ConditionTrue))
 
 			By("By checking that condition type is Ready")
 			Expect(createdKafkaTopic.Status.Conditions[0].Type).Should(Equal(infrav1beta1.ReadyCondition))
@@ -109,7 +108,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					}
 				}
 				return true
-			}).Should(BeTrue())
+			}, timeout*2, interval).Should(BeTrue())
 		})
 	})
 
