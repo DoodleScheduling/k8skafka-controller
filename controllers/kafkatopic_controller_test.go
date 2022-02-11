@@ -17,9 +17,8 @@ import (
 var _ = Describe("KafkaTopic controller", func() {
 	const (
 		KafkaTopicNamespace = "default"
-
-		timeout  = time.Second * 10
-		interval = time.Millisecond * 250
+		timeout             = time.Second * 20
+		interval            = time.Millisecond * 250
 	)
 
 	Context("When creating a topic that doesn't exist already", func() {
@@ -57,7 +56,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout*2, interval).Should(BeTrue())
+			}, timeout, interval).Should(BeTrue())
 
 			Expect(createdKafkaTopic.Spec.Name).Should(Equal(kafkaTopicName))
 
@@ -80,7 +79,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return "", errors.New("conditions are 0")
 				}
 				return createdKafkaTopic.Status.Conditions[0].Status, nil
-			}, timeout*2, interval).Should(Equal(metav1.ConditionTrue))
+			}, timeout, interval).Should(Equal(metav1.ConditionTrue))
 
 			By("By checking that condition type is Ready")
 			Expect(createdKafkaTopic.Status.Conditions[0].Type).Should(Equal(infrav1beta1.ReadyCondition))
@@ -92,7 +91,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -108,7 +107,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					}
 				}
 				return true
-			}, timeout*2, interval).Should(BeTrue())
+			}, timeout, interval).Should(BeTrue())
 		})
 	})
 
@@ -154,7 +153,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -197,7 +196,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("condition is true")
 				}
 				return nil
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			// Had to remove this one, as it is too flaky in CI environment
 			By("By checking that reason is that partitions cannot be removed")
@@ -255,7 +254,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -345,7 +344,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -388,7 +387,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("condition is true")
 				}
 				return nil
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			// Had to remove this one, as it is too flaky in CI environment
 			By("By checking that reason is that replication factor cannot be changed")
@@ -398,7 +397,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
 			Expect(topicInCluster).ToNot(BeNil())
@@ -454,7 +453,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -550,7 +549,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -659,7 +658,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout*2, interval).Should(Succeed())
+			}, timeout, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
