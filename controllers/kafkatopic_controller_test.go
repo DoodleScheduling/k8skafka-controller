@@ -17,7 +17,8 @@ import (
 var _ = Describe("KafkaTopic controller", func() {
 	const (
 		KafkaTopicNamespace = "default"
-		timeout             = time.Second * 20
+		timeoutTen          = time.Second * 10
+		timeoutTwenty       = time.Second * 20
 		interval            = time.Millisecond * 250
 	)
 
@@ -56,7 +57,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTwenty, interval).Should(BeTrue())
 
 			Expect(createdKafkaTopic.Spec.Name).Should(Equal(kafkaTopicName))
 
@@ -79,7 +80,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return "", errors.New("conditions are 0")
 				}
 				return createdKafkaTopic.Status.Conditions[0].Status, nil
-			}, timeout, interval).Should(Equal(metav1.ConditionTrue))
+			}, timeoutTwenty, interval).Should(Equal(metav1.ConditionTrue))
 
 			By("By checking that condition type is Ready")
 			Expect(createdKafkaTopic.Status.Conditions[0].Type).Should(Equal(infrav1beta1.ReadyCondition))
@@ -91,7 +92,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -107,7 +108,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					}
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTwenty, interval).Should(BeTrue())
 		})
 	})
 
@@ -147,13 +148,13 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -177,7 +178,7 @@ var _ = Describe("KafkaTopic controller", func() {
 				}
 				latest.Spec.Partitions = &newPartitions
 				return k8sClient.Update(ctx, latest)
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTen, interval).Should(Succeed())
 
 			By("By checking that topic is not ready")
 			Eventually(func() error {
@@ -196,7 +197,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("condition is true")
 				}
 				return nil
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			// Had to remove this one, as it is too flaky in CI environment
 			By("By checking that reason is that partitions cannot be removed")
@@ -206,7 +207,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
 			Expect(topicInCluster).ToNot(BeNil())
@@ -248,13 +249,13 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -278,7 +279,7 @@ var _ = Describe("KafkaTopic controller", func() {
 				}
 				latest.Spec.Partitions = &newPartitions
 				return k8sClient.Update(ctx, latest)
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTen, interval).Should(Succeed())
 
 			By("By checking that the number of partitions is properly updated")
 			Eventually(func() error {
@@ -293,14 +294,14 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("partitions are not changed")
 				}
 				return nil
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTen, interval).Should(Succeed())
 			Eventually(func() bool {
 				topic, err := GetTopic(kafkaTopicName)
 				if err != nil {
 					return false
 				}
 				return int64(len(topic.Partitions)) == newPartitions
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTen, interval).Should(BeTrue())
 		})
 	})
 
@@ -338,13 +339,13 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -368,7 +369,7 @@ var _ = Describe("KafkaTopic controller", func() {
 				}
 				latest.Spec.ReplicationFactor = &newReplicationFactor
 				return k8sClient.Update(ctx, latest)
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTen, interval).Should(Succeed())
 
 			By("By checking that topic is not ready")
 			Eventually(func() error {
@@ -387,7 +388,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return errors.New("condition is true")
 				}
 				return nil
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			// Had to remove this one, as it is too flaky in CI environment
 			By("By checking that reason is that replication factor cannot be changed")
@@ -397,7 +398,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
 			Expect(topicInCluster).ToNot(BeNil())
@@ -447,13 +448,13 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -484,7 +485,7 @@ var _ = Describe("KafkaTopic controller", func() {
 							return err
 						}
 						return nil
-					}, timeout, interval).Should(Succeed())
+					}, timeoutTen, interval).Should(Succeed())
 					Eventually(func() string {
 						latestConfig, err := GetTopicConfig(kafkaTopicName)
 						if err != nil {
@@ -498,7 +499,7 @@ var _ = Describe("KafkaTopic controller", func() {
 							}
 						}
 						return ""
-					}, timeout, interval).Should(Equal(tc.expectedValue))
+					}, timeoutTen, interval).Should(Equal(tc.expectedValue))
 				})
 			}
 		}
@@ -543,13 +544,13 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -576,7 +577,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return err
 				}
 				return nil
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTen, interval).Should(Succeed())
 
 			By("By checking that new configuration option is added to topic in cluster")
 			Eventually(func() string {
@@ -592,7 +593,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					}
 				}
 				return ""
-			}, timeout, interval).Should(Equal(fmt.Sprint(flushMs)))
+			}, timeoutTen, interval).Should(Equal(fmt.Sprint(flushMs)))
 
 			By("By checking that preexisting topic configuration option is still in brokers")
 			Eventually(func() string {
@@ -608,7 +609,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					}
 				}
 				return ""
-			}, timeout, interval).Should(Equal(fmt.Sprint(retentionMs)))
+			}, timeoutTen, interval).Should(Equal(fmt.Sprint(retentionMs)))
 		})
 	})
 
@@ -652,13 +653,13 @@ var _ = Describe("KafkaTopic controller", func() {
 					return false
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
 			Eventually(func() error {
 				_, err := GetTopic(kafkaTopicName)
 				return err
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTwenty, interval).Should(Succeed())
 
 			topicInCluster, err := GetTopic(kafkaTopicName)
 			Expect(err).To(BeNil())
@@ -687,7 +688,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					return err
 				}
 				return nil
-			}, timeout, interval).Should(Succeed())
+			}, timeoutTen, interval).Should(Succeed())
 
 			By("By checking that removed configuration option is removed from topic in cluster")
 			Eventually(func() bool {
@@ -705,7 +706,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					}
 				}
 				return true
-			}, timeout, interval).Should(BeTrue())
+			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that other topic configuration option is still in brokers")
 			Eventually(func() string {
@@ -721,7 +722,7 @@ var _ = Describe("KafkaTopic controller", func() {
 					}
 				}
 				return ""
-			}, timeout, interval).Should(Equal(fmt.Sprint(retentionMs)))
+			}, timeoutTen, interval).Should(Equal(fmt.Sprint(retentionMs)))
 		})
 	})
 })
