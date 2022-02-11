@@ -56,11 +56,11 @@ jobs:
           helm repo add confluentinc https://confluentinc.github.io/cp-helm-charts/
           helm upgrade --wait -i kafka confluentinc/cp-helm-charts \
           --version $KAFKA_VERSION \
-          --namespace kafka
-          --set cp-schema-registry.enabled=false
-          --set cp-kafka-rest.enabled=false
-          --set cp-kafka-connect.enabled=false
-          --set cp-ksql-server.enabled=false
+          --namespace kafka \
+          --set cp-schema-registry.enabled=false \
+          --set cp-kafka-rest.enabled=false \
+          --set cp-kafka-connect.enabled=false \
+          --set cp-ksql-server.enabled=false \
           --set cp-control-center.enabled=false
 #          kubectl -n kafka wait pod/kafka-cp-kafka-0 --for=condition=Ready --timeout=3m
 #          kubectl -n kafka wait pod/kafka-cp-kafka-1 --for=condition=Ready --timeout=3m
