@@ -1,6 +1,9 @@
 package controllers
 
-import infrav1beta1 "github.com/DoodleScheduling/k8skafka-controller/api/v1beta1"
+import (
+	infrav1beta1 "github.com/DoodleScheduling/k8skafka-controller/api/v1beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
+)
 
 // KafkaTopicConfigHolder
 /* KafkaTopicConfigHolder holds testing data.
@@ -13,6 +16,8 @@ type KafkaTopicConfigHolder struct {
 	expectedValue           interface{}
 	createKafkaTopicObjectF func(interface{}) *infrav1beta1.KafkaTopicConfig
 }
+
+var minCleanableDirtyRatio, _ = resource.ParseQuantity("0.9")
 
 // KafkaTopicConfigTestData
 /* KafkaTopicConfigTestData holds testing data for each topic configuration option.
@@ -164,8 +169,8 @@ var KafkaTopicConfigTestData = map[string][]KafkaTopicConfigHolder{
 	},
 	MinCleanableDirtyRatio: {
 		{
-			int64(1), "1.0", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
-				vv := v.(int64)
+			minCleanableDirtyRatio, "0.9", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+				vv := v.(resource.Quantity)
 				return &infrav1beta1.KafkaTopicConfig{
 					MinCleanableDirtyRatio: &vv,
 				}
@@ -178,6 +183,16 @@ var KafkaTopicConfigTestData = map[string][]KafkaTopicConfigHolder{
 				vv := v.(int64)
 				return &infrav1beta1.KafkaTopicConfig{
 					MinCompactionLagMs: &vv,
+				}
+			},
+		},
+	},
+	MaxCompactionLagMs: {
+		{
+			int64(10000), "10000", func(v interface{}) *infrav1beta1.KafkaTopicConfig {
+				vv := v.(int64)
+				return &infrav1beta1.KafkaTopicConfig{
+					MaxCompactionLagMs: &vv,
 				}
 			},
 		},

@@ -23,6 +23,7 @@ const (
 	MessageTimestampType                 = "message.timestamp.type"
 	MinCleanableDirtyRatio               = "min.cleanable.dirty.ratio"
 	MinCompactionLagMs                   = "min.compaction.lag.ms"
+	MaxCompactionLagMs                   = "max.compaction.lag.ms"
 	MinInsyncReplicas                    = "min.insync.replicas"
 	Preallocate                          = "preallocate"
 	RetentionBytes                       = "retention.bytes"
@@ -95,10 +96,13 @@ func TranslateKafkaTopicV1Beta1(topic v1beta1.KafkaTopic) *kafka.Topic {
 		c[MessageTimestampType] = *topic.GetMessageTimestampType()
 	}
 	if topic.GetMinCleanableDirtyRatio() != nil {
-		c[MinCleanableDirtyRatio] = strconv.FormatInt(*topic.GetMinCleanableDirtyRatio(), 10)
+		c[MinCleanableDirtyRatio] = strconv.FormatFloat(topic.GetMinCleanableDirtyRatio().AsApproximateFloat64(), 'f', 2, 64)
 	}
 	if topic.GetMinCompactionLagMs() != nil {
 		c[MinCompactionLagMs] = strconv.FormatInt(*topic.GetMinCompactionLagMs(), 10)
+	}
+	if topic.GetMaxCompactionLagMs() != nil {
+		c[MaxCompactionLagMs] = strconv.FormatInt(*topic.GetMaxCompactionLagMs(), 10)
 	}
 	if topic.GetMinInsyncReplicas() != nil {
 		c[MinInsyncReplicas] = strconv.FormatInt(*topic.GetMinInsyncReplicas(), 10)
