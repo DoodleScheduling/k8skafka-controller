@@ -1,0 +1,11 @@
+apiVersion: kafka.infra.doodle.com/v1beta1
+kind: KafkaTopic
+metadata:
+  name: test-create-new
+spec:
+  address: kafka-cp-kafka.kafka:9092
+  config:
+    cleanupPolicy: compact
+    minInsyncReplicas: 2
+  partitions: 16
+  replicationFactor: 3

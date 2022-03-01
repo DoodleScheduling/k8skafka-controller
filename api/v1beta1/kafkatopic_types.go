@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -58,13 +59,13 @@ type KafkaTopicConfig struct {
 	// The default policy ("delete") will discard old segments when their retention time or size limit has been reached.
 	// The "compact" setting will enable log compaction on the topic.
 	// +optional
-	CleanupPolicy *CleanupPolicy `json:"cleanupPolicy,omitempty"`
+	CleanupPolicy *string `json:"cleanupPolicy,omitempty"`
 
 	// Final compression type for a given topic.
 	// Supported are standard compression codecs: 'gzip', 'snappy', 'lz4', 'zstd').
 	// It additionally accepts 'uncompressed' which is equivalent to no compression; and 'producer' which means retain the original compression codec set by the producer.
 	// +optional
-	CompressionType *CompressionType `json:"compressionType,omitempty"`
+	CompressionType *string `json:"compressionType,omitempty"`
 
 	// The amount of time to retain delete tombstone markers for log compacted topics. Specified in milliseconds.
 	// This setting also gives a bound on the time in which a consumer must complete a read if they begin from offset 0
@@ -134,7 +135,7 @@ type KafkaTopicConfig struct {
 	// Define whether the timestamp in the message is message create time or log append time.
 	// The value should be either `CreateTime` or `LogAppendTime`
 	// +optional
-	MessageTimestampType *MessageTimestampType `json:"messageTimestampType,omitempty"`
+	MessageTimestampType *string `json:"messageTimestampType,omitempty"`
 
 	// This configuration controls how frequently the log compactor will attempt to clean the log (assuming LogCompaction is enabled).
 	// By default we will avoid cleaning a log where more than 50% of the log has been compacted.
@@ -144,11 +145,15 @@ type KafkaTopicConfig struct {
 	// (i) the dirty ratio threshold has been met and the log has had dirty (uncompacted) records for at least the MinCompactionLagMs duration,
 	// or (ii) if the log has had dirty (uncompacted) records for at most the MaxCompactionLagMs period.
 	// +optional
-	MinCleanableDirtyRatio *int64 `json:"minCleanableDirtyRatio,omitempty"`
+	MinCleanableDirtyRatio *resource.Quantity `json:"minCleanableDirtyRatio,omitempty"`
 
 	// The minimum time a message will remain uncompacted in the log. Only applicable for logs that are being compacted.
 	// +optional
 	MinCompactionLagMs *int64 `json:"minCompactionLagMs,omitempty"`
+
+	// The maximum time a message will remain ineligible for compaction in the log. Only applicable for logs that are being compacted.
+	// +optional
+	MaxCompactionLagMs *int64 `json:"maxCompactionLagMs,omitempty"`
 
 	// When a producer sets acks to "all" (or "-1"), this configuration specifies the minimum number of replicas that must acknowledge a write for the write to be considered successful.
 	// If this minimum cannot be met, then the producer will raise an exception (either NotEnoughReplicas or NotEnoughReplicasAfterAppend).
@@ -194,15 +199,11 @@ type KafkaTopicConfig struct {
 	UncleanLeaderElectionEnable *bool `json:"uncleanLeaderElectionEnable,omitempty"`
 }
 
-type CleanupPolicy string
-
 const (
 	CleanupPolicyDelete        = "delete"
 	CleanupPolicyCompact       = "compact"
 	CleanupPolicyDeleteCompact = "delete,compact"
 )
-
-type CompressionType string
 
 const (
 	CompressionTypeGZIP         = "gzip"
@@ -212,8 +213,6 @@ const (
 	CompressionTypeUncompressed = "uncompressed"
 	CompressionTypeProducer     = "producer"
 )
-
-type MessageTimestampType string
 
 const (
 	MessageTimestampTypeCreateTime    = "CreateTime"
@@ -319,14 +318,14 @@ func (in *KafkaTopic) GetReplicationFactor() int64 {
 	return *in.Spec.ReplicationFactor
 }
 
-func (in *KafkaTopic) GetCleanupPolicy() *CleanupPolicy {
+func (in *KafkaTopic) GetCleanupPolicy() *string {
 	if in.Spec.KafkaTopicConfig == nil {
 		return nil
 	}
 	return in.Spec.KafkaTopicConfig.CleanupPolicy
 }
 
-func (in *KafkaTopic) GetCompressionType() *CompressionType {
+func (in *KafkaTopic) GetCompressionType() *string {
 	if in.Spec.KafkaTopicConfig == nil {
 		return nil
 	}
@@ -410,14 +409,14 @@ func (in *KafkaTopic) GetMessageTimestampDifferenceMaxMs() *int64 {
 	return in.Spec.KafkaTopicConfig.MessageTimestampDifferenceMaxMs
 }
 
-func (in *KafkaTopic) GetMessageTimestampType() *MessageTimestampType {
+func (in *KafkaTopic) GetMessageTimestampType() *string {
 	if in.Spec.KafkaTopicConfig == nil {
 		return nil
 	}
 	return in.Spec.KafkaTopicConfig.MessageTimestampType
 }
 
-func (in *KafkaTopic) GetMinCleanableDirtyRatio() *int64 {
+func (in *KafkaTopic) GetMinCleanableDirtyRatio() *resource.Quantity {
 	if in.Spec.KafkaTopicConfig == nil {
 		return nil
 	}
@@ -429,6 +428,13 @@ func (in *KafkaTopic) GetMinCompactionLagMs() *int64 {
 		return nil
 	}
 	return in.Spec.KafkaTopicConfig.MinCompactionLagMs
+}
+
+func (in *KafkaTopic) GetMaxCompactionLagMs() *int64 {
+	if in.Spec.KafkaTopicConfig == nil {
+		return nil
+	}
+	return in.Spec.KafkaTopicConfig.MaxCompactionLagMs
 }
 
 func (in *KafkaTopic) GetMinInsyncReplicas() *int64 {

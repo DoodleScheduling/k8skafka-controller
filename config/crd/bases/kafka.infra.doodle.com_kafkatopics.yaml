@@ -125,6 +125,12 @@ spec:
                       or alternatively the wildcard '*' can be used to throttle all
                       replicas for this topic.
                     type: string
+                  maxCompactionLagMs:
+                    description: The maximum time a message will remain ineligible
+                      for compaction in the log. Only applicable for logs that are
+                      being compacted.
+                    format: int64
+                    type: integer
                   maxMessageBytes:
                     description: The largest record batch size allowed by Kafka. If
                       this is increased and there are consumers older than 0.10.2,
@@ -170,6 +176,9 @@ spec:
                       or `LogAppendTime`
                     type: string
                   minCleanableDirtyRatio:
+                    anyOf:
+                    - type: integer
+                    - type: string
                     description: 'This configuration controls how frequently the log
                       compactor will attempt to clean the log (assuming LogCompaction
                       is enabled). By default we will avoid cleaning a log where more
@@ -184,8 +193,8 @@ spec:
                       (uncompacted) records for at least the MinCompactionLagMs duration,
                       or (ii) if the log has had dirty (uncompacted) records for at
                       most the MaxCompactionLagMs period.'
-                    format: int64
-                    type: integer
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
                   minCompactionLagMs:
                     description: The minimum time a message will remain uncompacted
                       in the log. Only applicable for logs that are being compacted.

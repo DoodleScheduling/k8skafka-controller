@@ -20,37 +20,13 @@ const (
 	DefaultKafkaClientTimeout = 4 * time.Minute
 )
 
-type Connection struct {
-	protocol string
-	uri      string
+type DefaultKafkaClient struct{}
+
+func NewDefaultKafkaClient() DefaultKafkaClient {
+	return DefaultKafkaClient{}
 }
 
-type Topic struct {
-	Name              string
-	Partitions        int64
-	ReplicationFactor int64
-	Brokers           Brokers
-	Config            Config
-}
-
-// Holds BrokerIds as keys, and number of assignments for this Broker (currently the partitions that the Broker is a leader for)
-type Brokers map[int64]int64
-
-// Holds name-value configuration options, passed to underlying kafka lib as-is
-type Config map[string]string
-
-func NewTCPConnection(uri string) *Connection {
-	return NewConnection(TCP, uri)
-}
-
-func NewConnection(protocol string, uri string) *Connection {
-	return &Connection{
-		protocol: protocol,
-		uri:      uri,
-	}
-}
-
-func (c *Connection) CreateTopic(topic Topic) error {
+func (kc DefaultKafkaClient) CreateTopic(uri string, topic Topic) error {
 	ce := make([]k.ConfigEntry, 0)
 	for name, value := range topic.Config {
 		ce = append(ce, k.ConfigEntry{
@@ -65,18 +41,18 @@ func (c *Connection) CreateTopic(topic Topic) error {
 		ConfigEntries:     ce,
 	}
 
-	conn, err := k.Dial(c.protocol, c.uri)
+	conn, err := k.Dial(TCP, uri)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("cannot dial %s via %s", c.uri, c.protocol))
+		return errors.Wrap(err, fmt.Sprintf("cannot dial %s via %s", uri, TCP))
 	}
 	defer conn.Close()
 
 	controller, err := conn.Controller()
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("cannot get controller for %s", c.uri))
+		return errors.Wrap(err, fmt.Sprintf("cannot get controller for %s", uri))
 	}
 	var controllerConn *k.Conn
-	controllerConn, err = k.Dial(c.protocol, net.JoinHostPort(controller.Host, strconv.Itoa(controller.Port)))
+	controllerConn, err = k.Dial(TCP, net.JoinHostPort(controller.Host, strconv.Itoa(controller.Port)))
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("cannot dial controller connection %s %s", controller.Host, strconv.Itoa(controller.Port)))
 	}
@@ -84,13 +60,13 @@ func (c *Connection) CreateTopic(topic Topic) error {
 
 	err = controllerConn.CreateTopics(topicConfig)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("cannot create topic %+v for %s", topicConfig, c.uri))
+		return errors.Wrap(err, fmt.Sprintf("cannot create topic %+v for %s", topicConfig, uri))
 	}
 	return nil
 }
 
-func (c *Connection) CreatePartitions(ctx context.Context, topic Topic, numberOfPartitions int64) error {
-	addr, err := net.ResolveTCPAddr(c.protocol, c.uri)
+func (kc DefaultKafkaClient) CreatePartitions(ctx context.Context, uri string, topic Topic, numberOfPartitions int64) error {
+	addr, err := net.ResolveTCPAddr(TCP, uri)
 	if err != nil {
 		return err
 	}
@@ -109,7 +85,7 @@ func (c *Connection) CreatePartitions(ctx context.Context, topic Topic, numberOf
 
 	for p = 0; p < numberOfPartitions; p++ {
 		var brokerIDs []int32
-		brokerIDs, brokers = c.assignBrokersToPartition(topic, brokers)
+		brokerIDs, brokers = kc.assignBrokersToPartition(topic, brokers)
 		// TODO check how partition leader is assigned. Is it the first broker ID in slice? Not having a balanced leader assignment leads to leader skewed scenario
 		topicPartitionAssignments = append(topicPartitionAssignments, k.TopicPartitionAssignment{BrokerIDs: brokerIDs})
 	}
@@ -128,19 +104,19 @@ func (c *Connection) CreatePartitions(ctx context.Context, topic Topic, numberOf
 	}
 	res, err := client.CreatePartitions(ctx, &req)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("cannot create partitions via client %s %s", c.uri, c.protocol))
+		return errors.Wrap(err, fmt.Sprintf("cannot create partitions via client %s %s", uri, TCP))
 	}
 	if res.Errors == nil {
 		return nil
 	}
 	if e, found := res.Errors[topic.Name]; found {
-		return errors.Wrap(e, fmt.Sprintf("found error while creating partitions via client %s %s", c.uri, c.protocol))
+		return errors.Wrap(e, fmt.Sprintf("found error while creating partitions via client %s %s", uri, TCP))
 	}
 	return nil
 }
 
-func (c *Connection) UpdateTopicConfiguration(ctx context.Context, topic Topic) error {
-	addr, err := net.ResolveTCPAddr(c.protocol, c.uri)
+func (kc DefaultKafkaClient) UpdateTopicConfiguration(ctx context.Context, uri string, topic Topic) error {
+	addr, err := net.ResolveTCPAddr(TCP, uri)
 	if err != nil {
 		return err
 	}
@@ -171,23 +147,23 @@ func (c *Connection) UpdateTopicConfiguration(ctx context.Context, topic Topic) 
 
 	res, err := client.AlterConfigs(ctx, &alterConfigsRequest)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("cannot update topic config via client %s %s", c.uri, c.protocol))
+		return errors.Wrap(err, fmt.Sprintf("cannot update topic config via client %s %s", uri, TCP))
 	}
 	if res.Errors == nil {
 		return nil
 	}
 	for t, e := range res.Errors {
 		if t.Type == int8(k.ResourceTypeTopic) && t.Name == topic.Name {
-			return errors.Wrap(e, fmt.Sprintf("found error while updating topic via client %s %s %s", c.uri, topic.Name, c.protocol))
+			return errors.Wrap(e, fmt.Sprintf("found error while updating topic via client %s %s %s", uri, topic.Name, TCP))
 		}
 	}
 	return nil
 }
 
-func (c *Connection) GetTopic(name string) (*Topic, error) {
-	conn, err := k.Dial(c.protocol, c.uri)
+func (kc DefaultKafkaClient) GetTopic(uri string, name string) (*Topic, error) {
+	conn, err := k.Dial(TCP, uri)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("cannot get topic - dial failed for %s via %s", c.uri, c.protocol))
+		return nil, errors.Wrap(err, fmt.Sprintf("cannot get topic - dial failed for %s via %s", uri, TCP))
 	}
 	defer conn.Close()
 
@@ -226,7 +202,7 @@ func (c *Connection) GetTopic(name string) (*Topic, error) {
 
 // Assign broker IDs by least used brokers currently
 // Return selected brokerIDs, and updated collection of all brokers, with new data about usage
-func (c *Connection) assignBrokersToPartition(topic Topic, brokers map[int64]int64) ([]int32, map[int64]int64) {
+func (kc *DefaultKafkaClient) assignBrokersToPartition(topic Topic, brokers map[int64]int64) ([]int32, map[int64]int64) {
 	brokerIDs := make([]int32, 0)
 	var i int64
 	for i = 0; i < topic.ReplicationFactor; i++ {

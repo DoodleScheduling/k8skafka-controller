@@ -16,7 +16,7 @@ all: test manager
 
 # Run tests
 test: generate fmt vet manifests
-	go test ./... -coverprofile cover.out
+	go test ./... -test.v -coverprofile cover.out
 
 # Build manager binary
 manager: generate fmt vet
@@ -57,6 +57,9 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test
+	docker build . -t ${IMG}
+
+docker-build-without-tests: generate fmt vet manifests
 	docker build . -t ${IMG}
 
 # Push the docker image
