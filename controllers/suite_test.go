@@ -56,6 +56,8 @@ var (
 
 const (
 	numberOfConcurrentReconcilers = 1
+	kafkaClusterReadyWaitTimeout  = time.Second * 30
+	kafkaClusterReadyWaitInterval = time.Second
 )
 
 func TestAPIs(t *testing.T) {
@@ -157,6 +159,15 @@ var _ = BeforeSuite(func(done Done) {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
+
+	By("ensuring the kafka cluster is started")
+	Eventually(func() bool {
+		if s, err := kafkaCluster.IsAlive(); err != nil {
+			return false
+		} else {
+			return s
+		}
+	}, kafkaClusterReadyWaitTimeout, kafkaClusterReadyWaitInterval).Should(BeTrue())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,

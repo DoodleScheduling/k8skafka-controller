@@ -13,6 +13,7 @@ const (
 	ZOOKEEPER_PORT       = "2181"
 	KAFKA_BROKER_PORT    = "9092"
 	KAFKA_CLIENT_PORT    = "9093"
+	KAFKA_BROKER_ID      = "1"
 	ZOOKEEPER_IMAGE      = "confluentinc/cp-zookeeper:5.5.2"
 	KAFKA_IMAGE          = "confluentinc/cp-kafka:5.5.2"
 )
@@ -28,6 +29,9 @@ func (kc *TestingKafkaCluster) StartCluster() error {
 		return err
 	}
 	if err := kc.kafkaContainer.Start(ctx); err != nil {
+		return err
+	}
+	if err := kc.createProbe(); err != nil {
 		return err
 	}
 	return kc.startKafka()
@@ -55,6 +59,19 @@ func (kc *TestingKafkaCluster) GetKafkaHost() (string, error) {
 		return "", err
 	}
 	return host + ":" + port.Port(), nil
+}
+
+func (kc *TestingKafkaCluster) createProbe() error {
+	probeScript, err := ioutil.TempFile("", "probe.sh")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(probeScript.Name())
+	probeScript.WriteString("#!/bin/bash \n")
+	probeScript.WriteString(fmt.Sprintf("id=$(zookeeper-shell localhost:%s ls /brokers/ids | grep \"\\[%s\") \n", ZOOKEEPER_PORT, KAFKA_BROKER_ID))
+	probeScript.WriteString(fmt.Sprintf("if [ $id = \"[%s]\" ]; then exit 0; else exit 1; fi", KAFKA_BROKER_ID))
+
+	return kc.zookeeperContainer.CopyFileToContainer(context.Background(), probeScript.Name(), "probe.sh", 0700)
 }
 
 func (kc *TestingKafkaCluster) startKafka() error {
@@ -102,6 +119,18 @@ func NewTestingKafkaCluster() (*TestingKafkaCluster, error) {
 	}, nil
 }
 
+func (kc *TestingKafkaCluster) IsAlive() (bool, error) {
+	if s, err := kc.zookeeperContainer.Exec(context.Background(), []string{
+		"/probe.sh",
+	}); err != nil {
+		return false, err
+	} else if s == 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
 func createZookeeperContainer(network *testcontainers.DockerNetwork) (testcontainers.Container, error) {
 	ctx := context.Background()
 
@@ -124,7 +153,7 @@ func createKafkaContainer(network *testcontainers.DockerNetwork) (testcontainers
 			Image:        KAFKA_IMAGE,
 			ExposedPorts: []string{KAFKA_CLIENT_PORT},
 			Env: map[string]string{
-				"KAFKA_BROKER_ID":                        "1",
+				"KAFKA_BROKER_ID":                        KAFKA_BROKER_ID,
 				"KAFKA_ZOOKEEPER_CONNECT":                fmt.Sprintf("zookeeper:%s", ZOOKEEPER_PORT),
 				"KAFKA_LISTENERS":                        fmt.Sprintf("PLAINTEXT://0.0.0.0:%s,BROKER://0.0.0.0:%s", KAFKA_CLIENT_PORT, KAFKA_BROKER_PORT),
 				"KAFKA_LISTENER_SECURITY_PROTOCOL_MAP":   "BROKER:PLAINTEXT,PLAINTEXT:PLAINTEXT",
