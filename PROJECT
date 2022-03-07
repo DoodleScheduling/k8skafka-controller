@@ -1,7 +1,7 @@
-domain: infra.doodle.com
+domain: doodle.com
 repo: github.com/DoodleScheduling/k8skafka-controller
 resources:
-- group: kafka
+- group: kafka.infra.doodle.com
   kind: KafkaTopic
   version: v1beta1
 version: "2"

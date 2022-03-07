@@ -2,6 +2,8 @@
 
 Kubernetes controller that can manage Kafka Topics.
 
+Controller assumes you already have a working Kafka installation. How Kafka brokers are actually managed is outside of the scope of this project for the moment.
+
 ## Features
 ### Supported
 - creating topics

@@ -7,6 +7,7 @@ Installs the [k8skafka-controller](https://github.com/DoodleScheduling/k8skafka-
 To install the chart with the release name `k8skafka-controller`:
 
 ```console
+helm repo add k8skafka-controller https://doodlescheduling.github.io/k8skafka-controller/
 helm upgrade --install k8skafka-controller chart/k8skafka-controller
 ```
 
@@ -14,9 +15,8 @@ This command deploys the k8skafka-controller with the default configuration. The
 
 ## Using the Chart
 
-The chart comes with a ServiceMonitor for use with the [Prometheus Operator](https://github.com/helm/charts/tree/master/stable/prometheus-operator).
-If you're not using the Prometheus Operator, you can disable the ServiceMonitor by setting `serviceMonitor.enabled` to `false` and instead
-populate the `podAnnotations` as below:
+The chart comes with a Pod``Monitor for use with the [Prometheus Operator](https://github.com/helm/charts/tree/master/stable/prometheus-operator).
+If you're not using the Prometheus Operator, you can populate the `podAnnotations` as below:
 
 ```yaml
 podAnnotations:
@@ -30,5 +30,5 @@ podAnnotations:
 See Customizing the Chart Before Installing. To see all configurable options with detailed comments, visit the chart's values.yaml, or run the configuration command:
 
 ```sh
-$ helm show values chart/k8skafka-controller
+$ helm show values k8skafka-controller/k8skafka-controller
 ```
