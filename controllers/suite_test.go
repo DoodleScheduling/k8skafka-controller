@@ -127,7 +127,12 @@ var _ = BeforeSuite(func(done Done) {
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
 	}
 
+	By("starting up env")
 	var err error
+	cfg, err = testEnv.Start()
+	Expect(err).ToNot(HaveOccurred())
+	Expect(cfg).ToNot(BeNil())
+
 	By("setting up kafka cluster")
 	kafkaCluster, err = NewTestingKafkaCluster()
 	Expect(err).NotTo(HaveOccurred())
@@ -140,10 +145,6 @@ var _ = BeforeSuite(func(done Done) {
 	TestingKafkaClusterHost, err = kafkaCluster.GetKafkaHost()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(TestingKafkaClusterHost).ToNot(BeEmpty())
-
-	cfg, err = testEnv.Start()
-	Expect(err).ToNot(HaveOccurred())
-	Expect(cfg).ToNot(BeNil())
 
 	err = infrav1beta1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
