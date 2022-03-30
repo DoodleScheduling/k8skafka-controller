@@ -5,7 +5,6 @@
 [![report](https://goreportcard.com/badge/github.com/DoodleScheduling/k8skafka-controller)](https://goreportcard.com/report/github.com/DoodleScheduling/k8skafka-controller)
 [![license](https://img.shields.io/github/license/DoodleScheduling/k8skafka-controller.svg)](https://github.com/DoodleScheduling/k8skafka-controller/blob/master/LICENSE)
 [![release](https://img.shields.io/github/release/DoodleScheduling/k8skafka-controller/all.svg)](https://github.com/DoodleScheduling/k8skafka-controller/releases)
-[![release](https://img.shields.io/github/release/DoodleScheduling/k8skafka-controller/all.svg)](https://github.com/DoodleScheduling/k8skafka-controller/releases)
 
 Kubernetes controller that can manage Kafka Topics.
 
