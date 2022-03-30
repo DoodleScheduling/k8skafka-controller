@@ -1,6 +1,6 @@
 # k8skafka-controller
 
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5643/badge)](https://bestpractices.coreinfrastructure.org/projects/5643)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5865/badge)](https://bestpractices.coreinfrastructure.org/projects/5643)
 [![e2e](https://github.com/DoodleScheduling/k8skafka-controller/workflows/e2e/badge.svg)](https://github.com/DoodleScheduling/k8skafka-controller/actions)
 [![report](https://goreportcard.com/badge/github.com/DoodleScheduling/k8skafka-controller)](https://goreportcard.com/report/github.com/DoodleScheduling/k8skafka-controller)
 [![license](https://img.shields.io/github/license/DoodleScheduling/k8skafka-controller.svg)](https://github.com/DoodleScheduling/k8skafka-controller/blob/master/LICENSE)
