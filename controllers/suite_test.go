@@ -56,6 +56,8 @@ var (
 
 const (
 	numberOfConcurrentReconcilers = 1
+	kafkaClusterReadyWaitTimeout  = time.Second * 30
+	kafkaClusterReadyWaitInterval = time.Second
 )
 
 func TestAPIs(t *testing.T) {
@@ -127,7 +129,12 @@ var _ = BeforeSuite(func(done Done) {
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
 	}
 
+	By("starting up env")
 	var err error
+	cfg, err = testEnv.Start()
+	Expect(err).ToNot(HaveOccurred())
+	Expect(cfg).ToNot(BeNil())
+
 	By("setting up kafka cluster")
 	kafkaCluster, err = NewTestingKafkaCluster()
 	Expect(err).NotTo(HaveOccurred())
@@ -141,10 +148,6 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(TestingKafkaClusterHost).ToNot(BeEmpty())
 
-	cfg, err = testEnv.Start()
-	Expect(err).ToNot(HaveOccurred())
-	Expect(cfg).ToNot(BeNil())
-
 	err = infrav1beta1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -156,6 +159,15 @@ var _ = BeforeSuite(func(done Done) {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
+
+	By("ensuring the kafka cluster is started")
+	Eventually(func() bool {
+		if s, err := kafkaCluster.IsAlive(); err != nil {
+			return false
+		} else {
+			return s
+		}
+	}, kafkaClusterReadyWaitTimeout, kafkaClusterReadyWaitInterval).Should(BeTrue())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,

@@ -8,8 +8,8 @@ fullnameOverride: ""
 
 image:
   pullPolicy: IfNotPresent
-  repository: nexus.doodle.com:5000/devops/k8skafka-controller
-  tag: 0.0.0
+  repository: ghcr.io/doodlescheduling/k8skafka-controller
+  tag:
 
 imagePullSecrets: []
 
@@ -30,7 +30,7 @@ secretMounts: []
 #    secretName: secret
 #    path: /secrets
 
-#Add additional containers (sidecars)
+# Add additional containers (sidecars)
 extraContainers:
 
 podAnnotations: {}
@@ -55,17 +55,14 @@ replicas: 1
 
 resources: {}
 # limits:
-#   cpu: 50m
-#   memory: 50Mi
+#   cpu: 250m
+#   memory: 192Mi
 # requests:
-#   cpu: 20m
-#   memory: 30Mi
+#   cpu: 100m
+#   memory: 128Mi
 
 # Extra environment variables that will be passed into the exporter pod
 env: {}
-# env:
-#   NAMESPACES: default
-#   CONCURRENT: "10"
 
 ## The name of a secret in the same kubernetes namespace which contain values to be added to the environment
 ## This can be useful for auth tokens, etc
@@ -88,11 +85,6 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 10000
 
-service:
-  labels: {}
-  annotations: {}
-  type: ClusterIP
-
 serviceAccount:
   create: true
   # If create is true and name is not set, then a name is generated using the
@@ -107,11 +99,11 @@ clusterRBAC:
 # Creates a PodSecurityPolicy and the role/rolebinding
 # allowing the serviceaccount to use it
 podSecurityPolicy:
-  enabled: true
+  enabled: false
 
-# Prometheus operator ServiceMonitor
-serviceMonitor:
-  enabled: true
+# Prometheus operator PodMonitor
+podMonitor:
+  enabled: false
   interval: 30s
   scrapeTimeout: 10s
   namespace:
