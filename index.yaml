@@ -1,0 +1,23 @@
+apiVersion: v1
+entries:
+  k8skafka-controller:
+  - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2022-03-31T07:08:17.797354918Z"
+    description: Manage Kafka Topics and related settings
+    digest: 4bd44f479086fde9293946f528e804938b2e0ca2ecd99fb1f365464bf9223295
+    home: https://github.com/DoodleScheduling/k8skafka-controller
+    keywords:
+    - kubernetes-controller
+    - kafka
+    - kafka-topic
+    maintainers:
+    - email: devops@doodle.com
+      name: devops
+    name: k8skafka-controller
+    sources:
+    - https://github.com/DoodleScheduling/k8skafka-controller
+    urls:
+    - https://github.com/DoodleScheduling/k8skafka-controller/releases/download/k8skafka-controller-0.2.0/k8skafka-controller-0.2.0.tgz
+    version: 0.2.0
+generated: "2022-03-31T07:08:17.797370518Z"
