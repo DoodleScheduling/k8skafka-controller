@@ -1,0 +1,361 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.10.0
+  creationTimestamp: null
+  name: kafkatopics.kafka.infra.doodle.com
+spec:
+  group: kafka.infra.doodle.com
+  names:
+    kind: KafkaTopic
+    listKind: KafkaTopicList
+    plural: kafkatopics
+    shortNames:
+    - kt
+    singular: kafkatopic
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Ready")].message
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: KafkaTopic is the Schema for the kafkatopics API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KafkaTopicSpec defines the desired state of KafkaTopic
+            properties:
+              address:
+                description: The connect URI
+                type: string
+              config:
+                description: Additional topic configuration
+                properties:
+                  cleanupPolicy:
+                    description: Designates the retention policy to use on old log
+                      segments. Either "delete" or "compact" or both ("delete,compact").
+                      The default policy ("delete") will discard old segments when
+                      their retention time or size limit has been reached. The "compact"
+                      setting will enable log compaction on the topic.
+                    type: string
+                  compressionType:
+                    description: 'Final compression type for a given topic. Supported
+                      are standard compression codecs: ''gzip'', ''snappy'', ''lz4'',
+                      ''zstd''). It additionally accepts ''uncompressed'' which is
+                      equivalent to no compression; and ''producer'' which means retain
+                      the original compression codec set by the producer.'
+                    type: string
+                  deleteRetentionMs:
+                    description: The amount of time to retain delete tombstone markers
+                      for log compacted topics. Specified in milliseconds. This setting
+                      also gives a bound on the time in which a consumer must complete
+                      a read if they begin from offset 0 to ensure that they get a
+                      valid snapshot of the final stage (otherwise delete tombstones
+                      may be collected before they complete their scan).
+                    format: int64
+                    type: integer
+                  fileDeleteDelayMs:
+                    description: The time to wait before deleting a file from the
+                      filesystems
+                    format: int64
+                    type: integer
+                  flushMessages:
+                    description: This setting allows specifying an interval at which
+                      there will be a force if an fsync of data written to the log.
+                      For example, if this was set to 1 there would be a fsync after
+                      every message; if it were 5 there would be a fsync after every
+                      five messages. In general, it is recommended not to set this
+                      and use replication for durability and allow the operating system's
+                      background flush capabilities as it is more efficient.
+                    format: int64
+                    type: integer
+                  flushMs:
+                    description: This setting allows specifying a time interval at
+                      which there will be a force of an fsync of data written to the
+                      log. For example if this was set to 1000 there would be a fsync
+                      after 1000 ms had passed. In general, it is not recommended
+                      to set this and instead use replication for durability and allow
+                      the operating system's background flush capabilities as it is
+                      more efficient.
+                    format: int64
+                    type: integer
+                  followerReplicationThrottledReplicas:
+                    description: A list of replicas for which log replication should
+                      be throttled on the follower side. The list should describe
+                      a set of replicas in the form [PartitionId]:[BrokerId],[PartitionId]:[BrokerId]:...
+                      or alternatively the wildcard '*' can be used to throttle all
+                      replicas for this topic.
+                    type: string
+                  indexIntervalBytes:
+                    description: This setting controls how frequently Kafka adds an
+                      index entry to its offset index. The default setting ensures
+                      that a messages is indexed roughly every 4096 bytes. More indexing
+                      allows reads to jump closer to the exact position in the log
+                      but makes the index larger. You probably don't need to change
+                      this.
+                    format: int64
+                    type: integer
+                  leaderReplicationThrottledReplicas:
+                    description: A list of replicas for which log replication should
+                      be throttled on the leader side. The list should describe a
+                      set of replicas in the form [PartitionId]:[BrokerId],[PartitionId]:[BrokerId]:...
+                      or alternatively the wildcard '*' can be used to throttle all
+                      replicas for this topic.
+                    type: string
+                  maxCompactionLagMs:
+                    description: The maximum time a message will remain ineligible
+                      for compaction in the log. Only applicable for logs that are
+                      being compacted.
+                    format: int64
+                    type: integer
+                  maxMessageBytes:
+                    description: The largest record batch size allowed by Kafka. If
+                      this is increased and there are consumers older than 0.10.2,
+                      the consumers' fetch size must also be increased so that the
+                      they can fetch record batches this large. In the latest message
+                      format version, records are always grouped into batches for
+                      efficiency. In previous message format versions, uncompressed
+                      records are not grouped into batches and this limit only applies
+                      to a single record in that case.
+                    format: int64
+                    type: integer
+                  messageDownconversionEnable:
+                    description: This configuration controls whether down-conversion
+                      of message formats is enabled to satisfy consume requests. When
+                      set to false, broker will not perform down-conversion for consumers
+                      expecting an older message format. The broker responds with
+                      UNSUPPORTED_VERSION error for consume requests from such older
+                      clients. This configuration does not apply to any message format
+                      conversion that might be required for replication to followers.
+                    type: boolean
+                  messageFormatVersion:
+                    description: 'Specify the message format version the broker will
+                      use to append messages to the logs. The value should be a valid
+                      ApiVersion. Some examples are: 0.8.2, 0.9.0.0, 0.10.0, check
+                      ApiVersion for more details. By setting a particular message
+                      format version, the user is certifying that all the existing
+                      messages on disk are smaller or equal than the specified version.
+                      Setting this value incorrectly will cause consumers with older
+                      versions to break as they will receive messages with a format
+                      that they don''t understand.'
+                    type: string
+                  messageTimestampDifferenceMaxMs:
+                    description: The maximum difference allowed between the timestamp
+                      when a broker receives a message and the timestamp specified
+                      in the message. If MessageTimestampType=CreateTime, a message
+                      will be rejected if the difference in timestamp exceeds this
+                      threshold. This configuration is ignored if MessageTimestampType=LogAppendTime.
+                    format: int64
+                    type: integer
+                  messageTimestampType:
+                    description: Define whether the timestamp in the message is message
+                      create time or log append time. The value should be either `CreateTime`
+                      or `LogAppendTime`
+                    type: string
+                  minCleanableDirtyRatio:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: 'This configuration controls how frequently the log
+                      compactor will attempt to clean the log (assuming LogCompaction
+                      is enabled). By default we will avoid cleaning a log where more
+                      than 50% of the log has been compacted. This ratio bounds the
+                      maximum space wasted in the log by duplicates (at 50% at most
+                      50% of the log could be duplicates). A higher ratio will mean
+                      fewer, more efficient cleanings but will mean more wasted space
+                      in the log. If the MaxCompactionLagMs or the MinCompactionLagMs
+                      configurations are also specified, then the log compactor considers
+                      the log to be eligible for compaction as soon as either: (i)
+                      the dirty ratio threshold has been met and the log has had dirty
+                      (uncompacted) records for at least the MinCompactionLagMs duration,
+                      or (ii) if the log has had dirty (uncompacted) records for at
+                      most the MaxCompactionLagMs period.'
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  minCompactionLagMs:
+                    description: The minimum time a message will remain uncompacted
+                      in the log. Only applicable for logs that are being compacted.
+                    format: int64
+                    type: integer
+                  minInsyncReplicas:
+                    description: When a producer sets acks to "all" (or "-1"), this
+                      configuration specifies the minimum number of replicas that
+                      must acknowledge a write for the write to be considered successful.
+                      If this minimum cannot be met, then the producer will raise
+                      an exception (either NotEnoughReplicas or NotEnoughReplicasAfterAppend).
+                      When used together, MinInsyncReplicas and acks allow you to
+                      enforce greater durability guarantees. A typical scenario would
+                      be to create a topic with a replication factor of 3, set MinInsyncReplicas
+                      to 2, and produce with ack of "all". This will ensure that the
+                      producer raises an exception if a majority of replicas do not
+                      receive a write.
+                    format: int64
+                    type: integer
+                  preallocate:
+                    description: True if we should preallocate the file on disk when
+                      creating a new log segment.
+                    type: boolean
+                  retentionBytes:
+                    description: This configuration controls the maximum size a partition
+                      (which consists of log segments) can grow to before we will
+                      discard old log segments to free up space if we are using the
+                      "delete" retention policy. By default there is no size limit
+                      only a time limit. Since this limit is enforced at the partition
+                      level, multiply it by the number of partitions to compute the
+                      topic retention in bytes.
+                    format: int64
+                    type: integer
+                  retentionMs:
+                    description: This configuration controls the maximum time we will
+                      retain a log before we will discard old log segments to free
+                      up space if we are using the "delete" retention policy. This
+                      represents an SLA on how soon consumers must read their data.
+                      If set to -1, no time limit is applied.
+                    format: int64
+                    type: integer
+                  segmentBytes:
+                    description: This configuration controls the segment file size
+                      for the log. Retention and cleaning is always done a file at
+                      a time so a larger segment size means fewer files but less granular
+                      control over retention.
+                    format: int64
+                    type: integer
+                  segmentIndexBytes:
+                    description: This configuration controls the size of the index
+                      that maps offsets to file positions. We preallocate this index
+                      file and shrink it only after log rolls. You generally should
+                      not need to change this setting.
+                    format: int64
+                    type: integer
+                  segmentJitterMs:
+                    description: The maximum random jitter subtracted from the scheduled
+                      segment roll time to avoid thundering herds of segment rolling
+                    format: int64
+                    type: integer
+                  segmentMs:
+                    description: This configuration controls the period of time after
+                      which Kafka will force the log to roll even if the segment file
+                      isn't full to ensure that retention can delete or compact old
+                      data.
+                    format: int64
+                    type: integer
+                  uncleanLeaderElectionEnable:
+                    description: Indicates whether to enable replicas not in the ISR
+                      set to be elected as leader as a last resort, even though doing
+                      so may result in data loss.
+                    type: boolean
+                type: object
+              name:
+                description: Name is by default the same as metata.name
+                type: string
+              partitions:
+                description: Number of partitions
+                format: int64
+                type: integer
+              replicationFactor:
+                description: Replication factor
+                format: int64
+                type: integer
+            required:
+            - address
+            type: object
+          status:
+            description: KafkaTopicStatus defines the observed state of KafkaTopic
+            properties:
+              conditions:
+                description: Conditions holds the conditions for the KafkaTopic.
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    \n type FooStatus struct{ // Represents the observations of a
+                    foo's current state. // Known .status.conditions.type are: \"Available\",
+                    \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
+                    // +listType=map // +listMapKey=type Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        --- Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
