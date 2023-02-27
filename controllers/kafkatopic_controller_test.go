@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"k8s.io/apimachinery/pkg/types"
 	"strconv"
 	"time"
+
+	"k8s.io/apimachinery/pkg/types"
 
 	infrav1beta1 "github.com/DoodleScheduling/k8skafka-controller/api/v1beta1"
 	. "github.com/onsi/ginkgo"
@@ -53,10 +54,7 @@ var _ = Describe("KafkaTopic controller", func() {
 
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, kafkaTopicLookupKey, createdKafkaTopic)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeoutTwenty, interval).Should(BeTrue())
 
 			Expect(createdKafkaTopic.Spec.Name).Should(Equal(kafkaTopicName))
@@ -144,10 +142,7 @@ var _ = Describe("KafkaTopic controller", func() {
 
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, kafkaTopicLookupKey, createdKafkaTopic)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
@@ -245,10 +240,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			createdKafkaTopic := &infrav1beta1.KafkaTopic{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, kafkaTopicLookupKey, createdKafkaTopic)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
@@ -335,10 +327,7 @@ var _ = Describe("KafkaTopic controller", func() {
 			createdKafkaTopic := &infrav1beta1.KafkaTopic{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, kafkaTopicLookupKey, createdKafkaTopic)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
@@ -444,10 +433,7 @@ var _ = Describe("KafkaTopic controller", func() {
 
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, kafkaTopicLookupKey, createdKafkaTopic)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
@@ -540,10 +526,7 @@ var _ = Describe("KafkaTopic controller", func() {
 
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, kafkaTopicLookupKey, createdKafkaTopic)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")
@@ -649,10 +632,7 @@ var _ = Describe("KafkaTopic controller", func() {
 
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, kafkaTopicLookupKey, createdKafkaTopic)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeoutTen, interval).Should(BeTrue())
 
 			By("By checking that the topic is created in kafka cluster")

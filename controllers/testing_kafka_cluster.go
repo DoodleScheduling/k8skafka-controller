@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -63,21 +62,21 @@ func (kc *TestingKafkaCluster) GetKafkaHost() (string, error) {
 }
 
 func (kc *TestingKafkaCluster) createProbe() error {
-	probeScript, err := ioutil.TempFile("", "probe.sh")
+	probeScript, err := os.CreateTemp("", "probe.sh")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(probeScript.Name())
-	probeScript.WriteString("#!/bin/bash \n")
-	probeScript.WriteString(fmt.Sprintf("id=$(zookeeper-shell localhost:%s ls /brokers/ids | grep \"\\[%s\") \n", ZOOKEEPER_PORT, KAFKA_BROKER_ID))
-	probeScript.WriteString(fmt.Sprintf("if [ $id = \"[%s]\" ]; then exit 0; else exit 1; fi", KAFKA_BROKER_ID))
+	_, _ = probeScript.WriteString("#!/bin/bash \n")
+	_, _ = probeScript.WriteString(fmt.Sprintf("id=$(zookeeper-shell localhost:%s ls /brokers/ids | grep \"\\[%s\") \n", ZOOKEEPER_PORT, KAFKA_BROKER_ID))
+	_, _ = probeScript.WriteString(fmt.Sprintf("if [ $id = \"[%s]\" ]; then exit 0; else exit 1; fi", KAFKA_BROKER_ID))
 
 	return kc.zookeeperContainer.CopyFileToContainer(context.Background(), probeScript.Name(), "probe.sh", 0700)
 }
 
 func (kc *TestingKafkaCluster) startKafka() error {
 	ctx := context.Background()
-	kafkaStartFile, err := ioutil.TempFile("", "testcontainers_start.sh")
+	kafkaStartFile, err := os.CreateTemp("", "testcontainers_start.sh")
 	if err != nil {
 		return err
 	}
@@ -87,11 +86,11 @@ func (kc *TestingKafkaCluster) startKafka() error {
 	if err != nil {
 		return err
 	}
-	kafkaStartFile.WriteString("#!/bin/bash \n")
-	kafkaStartFile.WriteString(fmt.Sprintf("export KAFKA_ADVERTISED_LISTENERS='PLAINTEXT://%s,BROKER://kafka:%s'\n", exposedHost, KAFKA_BROKER_PORT))
-	kafkaStartFile.WriteString(". /etc/confluent/docker/bash-config \n")
-	kafkaStartFile.WriteString("/etc/confluent/docker/configure \n")
-	kafkaStartFile.WriteString("/etc/confluent/docker/launch \n")
+	_, _ = kafkaStartFile.WriteString("#!/bin/bash \n")
+	_, _ = kafkaStartFile.WriteString(fmt.Sprintf("export KAFKA_ADVERTISED_LISTENERS='PLAINTEXT://%s,BROKER://kafka:%s'\n", exposedHost, KAFKA_BROKER_PORT))
+	_, _ = kafkaStartFile.WriteString(". /etc/confluent/docker/bash-config \n")
+	_, _ = kafkaStartFile.WriteString("/etc/confluent/docker/configure \n")
+	_, _ = kafkaStartFile.WriteString("/etc/confluent/docker/launch \n")
 
 	return kc.kafkaContainer.CopyFileToContainer(ctx, kafkaStartFile.Name(), "testcontainers_start.sh", 0700)
 }
