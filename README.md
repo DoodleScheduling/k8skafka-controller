@@ -1,10 +1,10 @@
 # k8skafka-controller
 
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5865/badge)](https://bestpractices.coreinfrastructure.org/projects/5643)
-[![e2e](https://github.com/DoodleScheduling/k8skafka-controller/workflows/e2e/badge.svg)](https://github.com/DoodleScheduling/k8skafka-controller/actions)
-[![report](https://goreportcard.com/badge/github.com/DoodleScheduling/k8skafka-controller)](https://goreportcard.com/report/github.com/DoodleScheduling/k8skafka-controller)
-[![license](https://img.shields.io/github/license/DoodleScheduling/k8skafka-controller.svg)](https://github.com/DoodleScheduling/k8skafka-controller/blob/master/LICENSE)
 [![release](https://img.shields.io/github/release/DoodleScheduling/k8skafka-controller/all.svg)](https://github.com/DoodleScheduling/k8skafka-controller/releases)
+[![release](https://github.com/doodlescheduling/k8skafka-controller/actions/workflows/release.yaml/badge.svg)](https://github.com/doodlescheduling/k8skafka-controller/actions/workflows/release.yaml)
+[![report](https://goreportcard.com/badge/github.com/DoodleScheduling/k8skafka-controller)](https://goreportcard.com/report/github.com/DoodleScheduling/k8skafka-controller)
+[![Coverage Status](https://coveralls.io/repos/github/DoodleScheduling/k8skafka-controller/badge.svg?branch=master)](https://coveralls.io/github/DoodleScheduling/k8skafka-controller?branch=master)
+[![license](https://img.shields.io/github/license/DoodleScheduling/k8skafka-controller.svg)](https://github.com/DoodleScheduling/k8skafka-controller/blob/master/LICENSE)
 
 Kubernetes controller that can manage Kafka Topics.
 
