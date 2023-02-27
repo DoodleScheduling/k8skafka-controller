@@ -3,9 +3,10 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/testcontainers/testcontainers-go"
 	"io/ioutil"
 	"os"
+
+	"github.com/testcontainers/testcontainers-go"
 )
 
 const (
@@ -120,9 +121,7 @@ func NewTestingKafkaCluster() (*TestingKafkaCluster, error) {
 }
 
 func (kc *TestingKafkaCluster) IsAlive() (bool, error) {
-	if s, err := kc.zookeeperContainer.Exec(context.Background(), []string{
-		"/probe.sh",
-	}); err != nil {
+	if s, _, err := kc.zookeeperContainer.Exec(context.Background(), []string{"/probe.sh"}); err != nil {
 		return false, err
 	} else if s == 0 {
 		return true, nil
