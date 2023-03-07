@@ -18,14 +18,15 @@ package controllers
 
 import (
 	"context"
-	"github.com/DoodleScheduling/k8skafka-controller/kafka"
-	k "github.com/segmentio/kafka-go"
 	"net"
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
 	"time"
+
+	"github.com/DoodleScheduling/k8skafka-controller/kafka"
+	k "github.com/segmentio/kafka-go"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -126,7 +127,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "config", "base", "crd", "bases")},
 	}
 
 	By("starting up env")
