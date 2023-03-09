@@ -60,11 +60,11 @@ jobs:
         run: make deploy IMG=test/k8skafka-controller:latest
       - name: Setup Kafka
         env:
-          KAFKA_VERSION: ${{ '0.5.0' }}
+          KAFKA_VERSION: ${{ '2.7.0' }}
         run: |
           kubectl create ns kafka
           helm repo add confluentinc https://confluentinc.github.io/cp-helm-charts/
-          helm upgrade --wait -i cp-kafka confluentinc/cp-helm-charts \
+          helm upgrade --wait -i kafka confluentinc/cp-helm-charts \
           --version $KAFKA_VERSION \
           --namespace kafka \
           --set cp-schema-registry.enabled=false \
