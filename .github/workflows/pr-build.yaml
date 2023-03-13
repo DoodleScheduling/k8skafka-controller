@@ -64,6 +64,9 @@ jobs:
         run: |
           kubectl create ns kafka
           helm repo add confluentinc https://confluentinc.github.io/cp-helm-charts/
+          helm upgrade --wait -i zookeeper confluentinc/cp-helm-charts \
+          --namespace kafka \
+          --set zookeeper.enabled=true
           helm upgrade --wait -i kafka confluentinc/cp-helm-charts \
           --version $KAFKA_VERSION \
           --namespace kafka \
