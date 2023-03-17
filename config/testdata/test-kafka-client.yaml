@@ -8,7 +8,7 @@ metadata:
 spec:
   containers:
     - name: kafka-client
-      image: confluentinc/cp-enterprise-kafka:5.5.0
+      image: bitnami/kafka:3.4.0-debian-11-r6
       command:
         - sh
         - -c
