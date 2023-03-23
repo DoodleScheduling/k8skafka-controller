@@ -1,5 +1,6 @@
+
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= k8skafka-controller:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 
@@ -97,7 +98,7 @@ docker-push: ## Push docker image with the manager.
 ##@ Deployment
 
 ifndef ignore-not-found
-  ignore-not-found = false
+	ignore-not-found = false
 endif
 
 .PHONY: install
@@ -117,10 +118,26 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+CLUSTER=kind
+
+.PHONY: kind-test
+kind-test: docker-build ## Deploy including test
+	kubectl config use-context kind-${CLUSTER}
+	kubectl create ns kafka
+	helm repo add bitnami https://charts.bitnami.com/bitnami
+	helm upgrade --wait -i kafka bitnami/kafka --namespace kafka
+	kustomize build config/base/crd | kubectl apply -f -
+	kind load docker-image ${IMG} --name ${CLUSTER}
+	kubectl -n kafka apply -f ./config/testdata/test-kafka-client.yaml
+	kubectl -n kafka wait --for=condition=ready pod -l app=kafka-client
+	./scripts/tests/e2e/test_suite.sh
+	kubectl -n k8skafka-system wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
+
 CONTROLLER_GEN = $(GOBIN)/controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0)
+	cp config/base/crd/bases/* chart/k8skafka-controller/crds/
 
 GOLANGCI_LINT = $(GOBIN)/golangci-lint
 .PHONY: golangci-lint
