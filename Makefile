@@ -121,7 +121,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 CLUSTER=kind
 
 .PHONY: kind-test
-kind-test: docker-build ## Deploy including test
+kind-test: ## Deploy including test
 	kubectl config use-context kind-${CLUSTER}
 	kubectl create ns kafka
 	helm repo add bitnami https://charts.bitnami.com/bitnami
