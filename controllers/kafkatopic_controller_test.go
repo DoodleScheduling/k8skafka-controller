@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	infrav1beta1 "github.com/DoodleScheduling/k8skafka-controller/api/v1beta1"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
