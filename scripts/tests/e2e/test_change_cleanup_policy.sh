@@ -21,7 +21,7 @@ timeoutForAttempt=3
 
 while [ $i -le $numberOfAttempts ]; do
   # get result of changing cleanup policy in Kafka
-  res=$(kubectl -n kafka exec -i kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka:9092)
+  res=$(kubectl -n k8skafka-system exec -i sts/kafka -- kafka-topics.sh --describe --topic test-create-new --bootstrap-server kafka:9092)
   pol=$(echo "$res" | grep "$expectedPolicy" | wc -l | xargs)
 
   # assert policy is as expected in Kafka

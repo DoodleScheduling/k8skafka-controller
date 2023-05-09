@@ -71,7 +71,7 @@ test: manifests generate fmt vet tidy envtest ## Run tests.
 
 .PHONY: build
 build: generate fmt vet tidy ## Build manager binary.
-	go build -o bin/manager main.go
+	CGO_ENABLED=0 go build -o manager main.go
 
 .PHONY: run
 run: manifests generate fmt vet tidy ## Run a controller from your host.
@@ -88,7 +88,7 @@ api-docs: gen-crd-api-reference-docs
 	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./api/v1beta1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/v1beta1.md
 
 .PHONY: docker-build
-docker-build:
+docker-build: build
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
@@ -118,20 +118,17 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
+TEST_PROFILE=kafka-3.2
 CLUSTER=kind
 
 .PHONY: kind-test
-kind-test: ## Deploy including test
-	kubectl config use-context kind-${CLUSTER}
-	kubectl create ns kafka
-	helm repo add bitnami https://charts.bitnami.com/bitnami
-	helm upgrade --wait -i kafka bitnami/kafka --namespace kafka
-	kustomize build config/base/crd | kubectl apply -f -
+kind-test: docker-build ## Deploy including test
+	kustomize build config/base/crd | kubectl --context kind-${CLUSTER} apply -f -	
+	kubectl --context kind-${CLUSTER} -n k8skafka-system delete kafkatopics --all
 	kind load docker-image ${IMG} --name ${CLUSTER}
-	kubectl -n kafka apply -f ./config/testdata/test-kafka-client.yaml
-	kubectl -n kafka wait --for=condition=ready pod -l app=kafka-client
-	./scripts/tests/e2e/test_suite.sh
-	kubectl -n k8skafka-system wait --for=condition=ready pod -l app=k8skafka-controller && kubectl -n k8skafka-system logs deploy/k8skafka-controller
+	kustomize build config/tests/cases/${TEST_PROFILE} --enable-helm | kubectl --context kind-${CLUSTER} apply -f -	
+	kubectl --context kind-${CLUSTER} -n k8sdb-system delete pods -l app=k8sdb-controller
+	exec /bin/bash ./scripts/tests/e2e/test_suite.sh
 
 CONTROLLER_GEN = $(GOBIN)/controller-gen
 .PHONY: controller-gen

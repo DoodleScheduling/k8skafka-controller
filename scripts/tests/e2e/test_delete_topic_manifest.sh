@@ -41,5 +41,5 @@ exit 1
 fi
 
 # assert that topic still exists in Kafka, since we don't support garbage collection for now
-res=$(kubectl -n kafka exec -i kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka:9092)
+res=$(kubectl -n k8skafka-system exec -i sts/kafka -- kafka-topics.sh --describe --topic test-create-new --bootstrap-server kafka:9092)
 [[ -z "$res" ]] && (there is no topic test-create-new && exit 1) || echo "topic test-create-new still exists, as expected"
