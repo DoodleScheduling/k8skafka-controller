@@ -3,7 +3,7 @@ kind: KafkaTopic
 metadata:
   name: test-create-new
 spec:
-  address: kafka-cp-kafka.kafka:9092
+  address: kafka.k8skafka-system:9092
   config:
     cleanupPolicy: compact,delete
     minInsyncReplicas: 2

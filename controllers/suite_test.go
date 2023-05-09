@@ -18,22 +18,22 @@ package controllers
 
 import (
 	"context"
-	"github.com/DoodleScheduling/k8skafka-controller/kafka"
-	k "github.com/segmentio/kafka-go"
 	"net"
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	"github.com/DoodleScheduling/k8skafka-controller/kafka"
+	k "github.com/segmentio/kafka-go"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
@@ -63,9 +63,8 @@ const (
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
-		[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t,
+		"Controller Suite")
 }
 
 func GetTopic(name string) (*k.Topic, error) {
@@ -126,7 +125,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "config", "base", "crd", "bases")},
 	}
 
 	By("starting up env")
@@ -192,12 +191,24 @@ var _ = BeforeSuite(func(done Done) {
 	}()
 
 	close(done)
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
-	err := testEnv.Stop()
-	Expect(err).ToNot(HaveOccurred())
+	err := (func() (err error) {
+		// Need to sleep if the first stop fails due to a bug:
+		// https://github.com/kubernetes-sigs/controller-runtime/issues/1571
+		sleepTime := 1 * time.Millisecond
+		for i := 0; i < 12; i++ { // Exponentially sleep up to ~4s
+			if err = testEnv.Stop(); err == nil {
+				return
+			}
+			sleepTime *= 2
+			time.Sleep(sleepTime)
+		}
+		return
+	})()
+	Expect(err).NotTo(HaveOccurred())
 
 	err = kafkaCluster.StopCluster()
 	Expect(err).ToNot(HaveOccurred())

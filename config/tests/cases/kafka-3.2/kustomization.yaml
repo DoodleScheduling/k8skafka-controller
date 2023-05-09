@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: k8skafka-system
+
+resources: 
+- ../../../default
+
+helmCharts:
+- repo: https://charts.bitnami.com/bitnami
+  name: kafka
+  version: 22.0.2
+  releaseName: kafka
+  namespace: k8skafka-system
+  valuesInline:
+    replicaCount: 3
+    persistence:
+      enabled: false
+
+images:
+- name: ghcr.io/doodlescheduling/k8skafka-controller
+  newTag: latest
+  newName: k8skafka-controller

@@ -21,7 +21,7 @@ timeoutForAttempt=3
 
 while [ $i -le $numberOfAttempts ]; do
   # get result of adding partitions in Kafka
-  res=$(kubectl -n kafka exec -i kafka-client -- kafka-topics --describe --topic test-create-new --bootstrap-server kafka-cp-kafka:9092)
+  res=$(kubectl -n k8skafka-system exec -i sts/kafka -- kafka-topics.sh --describe --topic test-create-new --bootstrap-server kafka:9092)
   res=$(echo "$res" | tail -n+2 | wc -l | xargs)
 
   # assert number of partitions in Kafka is as expected
