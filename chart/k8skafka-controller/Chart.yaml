@@ -12,4 +12,4 @@ keywords:
 name: k8skafka-controller
 sources:
 - https://github.com/DoodleScheduling/k8skafka-controller
-version: 0.4.0
+version: 0.4.1
