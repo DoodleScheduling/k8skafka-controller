@@ -10,7 +10,7 @@ require (
 	github.com/segmentio/kafka-go v0.4.39
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.19.0
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
